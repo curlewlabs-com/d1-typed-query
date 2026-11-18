@@ -53,12 +53,14 @@ export function assertSourceName(token: string, kind: string): void {
     );
 }
 
-// The identifier as the SQL text carries it: a keyword double-quoted, so
+// The identifier as the SQL text carries it: a keyword in square brackets, so
 // SQLite reads it as the name, and every other identifier bare, exactly as
-// written. The grammar admits no `"`, so doubling one changes nothing today;
-// it keeps the quoting correct on its own.
+// written. Brackets rather than double quotes: SQLite reads a double-quoted
+// name that matches no column as a string literal, so a keyword column the
+// database lacks would read as its own name instead of failing to prepare. A
+// bracketed name is only ever an identifier, a form SQLite documents as
+// accepted (https://www.sqlite.org/lang_keywords.html). The grammar admits no
+// `]`, so no escaping is needed.
 export function sqlName(token: string): string {
-  return SQLITE_KEYWORDS.has(token.toUpperCase())
-    ? `"${token.replaceAll('"', '""')}"`
-    : token;
+  return SQLITE_KEYWORDS.has(token.toUpperCase()) ? `[${token}]` : token;
 }

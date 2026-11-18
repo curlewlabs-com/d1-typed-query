@@ -66,12 +66,13 @@ alias, so a joined or aliased read orders by its input column as written.
   member.
 - **SQL identifiers.** Constructors accept unquoted identifier tokens only:
   whitespace, quoted names, hyphens and punctuation fail closed. The renderer
-  double-quotes a name that is an SQLite keyword and writes every other name as
-  given. Bare, a keyword column would read as the keyword (`current_time` as the
-  clock) and a source aliased `left` would make the next join a LEFT JOIN. A
-  bind renders as `?`, so its name never reaches the SQL text. A source name is
-  refused when it is `excluded`, which in a conflict arm names the incoming row
-  whatever the quoting.
+  writes a name that is an SQLite keyword in square brackets, never double
+  quotes, which SQLite reads as a string when no column matches, and writes
+  every other name as given. Bare, a keyword column would read as the keyword
+  (`current_time` as the clock) and a source aliased `left` would make the next
+  join a LEFT JOIN. A bind renders as `?`, so its name never reaches the SQL
+  text. A source name is refused when it is `excluded`, which in a conflict arm
+  names the incoming row whatever the quoting.
 - **SQL literal contents.** Literal encoding escapes strings and refuses
   non-finite and non-integer numbers, and text holding NUL or a lone surrogate,
   which a statement cannot carry. Text inside a string is data, never parsed as

@@ -174,6 +174,9 @@ export function renderQuery(statement: AnyStatement): RenderedQuery {
           value = expression(order.tree.value);
           break;
         case "projection":
+          // Every output name is quoted here, keyword or not, and it always
+          // names an output of this SELECT, so SQLite resolves it to that
+          // output and its string fallback (sqlName) cannot apply.
           value = `"${order.tree.projection.name}"${order.tree.isNotNull ? " IS NOT NULL" : ""}`;
           break;
       }

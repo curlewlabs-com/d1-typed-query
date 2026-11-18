@@ -1,5 +1,5 @@
-// Names that are SQLite keywords. The renderer double-quotes them and writes
-// every other name exactly as given. Each keyword is prepared and run against
+// Names that are SQLite keywords. The renderer writes them in square brackets
+// and every other name exactly as given. Each keyword is prepared and run against
 // SQLite as a table, a column and an alias, so both the list and the quoting
 // are exercised rather than asserted.
 
@@ -81,7 +81,7 @@ describe("keyword names", () => {
           where: eqParam(column, "value"),
         }),
       );
-      const q = `"${keyword}"`;
+      const q = `[${keyword}]`;
       expect(read.sql).toBe(`SELECT ${q} AS ${q} FROM ${q} WHERE ${q} = ?`);
       const alias = aliasTable(table, keyword);
       const joined = buildQuery(
@@ -108,6 +108,29 @@ describe("keyword names", () => {
       expect(db.query(read.sql).all(7)).toEqual([{ [keyword]: 7 }]);
       expect(db.query(joined.sql).all()).toEqual([]);
     }
+  });
+
+  // A double-quoted name that matches no column is read by SQLite as a string,
+  // which would let a keyword column the database lacks read as its own name.
+  // In brackets it is only ever a name, so that drift fails to prepare.
+  it("fails to prepare a keyword column the database lacks", () => {
+    const db = library();
+    const Drifted = defineTable("drifted", {
+      id: Library.integer,
+      key: Library.text,
+    });
+    db.exec("CREATE TABLE drifted (id INTEGER NOT NULL) STRICT");
+    const bare = buildQuery(
+      select({ from: Drifted, columns: [project(Drifted.key)] }),
+    );
+    expect(bare.sql).toBe("SELECT [key] FROM drifted");
+    expect(() => db.query(bare.sql)).toThrow(/no such column: key/);
+    const d = aliasTable(Drifted, "d");
+    const qualified = buildQuery(
+      select({ from: d, columns: [project(d.id)], where: eqParam(d.key, "k") }),
+    );
+    expect(qualified.sql).toBe("SELECT d.id FROM drifted d WHERE d.[key] = ?");
+    expect(() => db.query(qualified.sql)).toThrow(/no such column: d.key/);
   });
 
   it("leaves every other name bare", () => {
@@ -167,7 +190,7 @@ describe("keyword names", () => {
       }),
     );
     expect(upsert.sql).toBe(
-      `INSERT INTO "Order" ("Key", "current_time") SELECT ?, ? ON CONFLICT ("Key") DO UPDATE SET "current_time" = excluded."current_time" RETURNING "Key", "current_time"`,
+      "INSERT INTO [Order] ([Key], [current_time]) SELECT ?, ? ON CONFLICT ([Key]) DO UPDATE SET [current_time] = excluded.[current_time] RETURNING [Key], [current_time]",
     );
     const run = (at: number) =>
       db
@@ -209,7 +232,7 @@ describe("keyword names", () => {
       ),
     );
     expect(read.sql).toBe(
-      `WITH "rows"("first") AS (VALUES (?)) SELECT "group"."current_time" FROM (SELECT "current_time" FROM "Order" INDEXED BY "index") "group" JOIN "rows" ON "rows"."first" = "rows"."first" JOIN json_each(?) "join" ON "join".value = "rows"."first"`,
+      "WITH [rows]([first]) AS (VALUES (?)) SELECT [group].[current_time] FROM (SELECT [current_time] FROM [Order] INDEXED BY [index]) [group] JOIN [rows] ON [rows].[first] = [rows].[first] JOIN json_each(?) [join] ON [join].value = [rows].[first]",
     );
     expect(db.query(read.sql).all("a", '["a"]')).toEqual([
       { current_time: 200 },

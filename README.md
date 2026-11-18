@@ -307,15 +307,14 @@ Limits:
   enters as a bind. Text holding NUL or a lone surrogate is refused, in a
   literal or a `like()` pattern, because SQL text cannot carry it.
 - **Names.** Every name is a plain identifier. One that is an
-  [SQLite keyword](https://www.sqlite.org/lang_keywords.html) is written
-  double-quoted, so a `key`, `order` or `current_time` column reads that column,
-  and a source aliased `left` stays an alias. Every other name is written as
-  given. No table, alias or CTE may be named `excluded`, the name an upsert's
-  incoming row takes, which quoting cannot tell apart.
-- **A quoted name the database lacks.** SQLite reads a double-quoted name that
-  matches no column as a string, unless it was built without that legacy
-  behavior. So a keyword column that is declared but missing from the database
-  reads as its own name, where an unquoted name would fail to prepare.
+  [SQLite keyword](https://www.sqlite.org/lang_keywords.html) is written in
+  square brackets (`[key]`), so a `key`, `order` or `current_time` column reads
+  that column, and a source aliased `left` stays an alias. Brackets rather than
+  double quotes, because SQLite reads a double-quoted name that matches no
+  column as a string: a keyword column missing from the database fails to
+  prepare instead. Every other name is written as given. No table, alias or CTE
+  may be named `excluded`, the name an upsert's incoming row takes, which
+  quoting cannot tell apart.
 - **Functions.** The SQL functions are the closed set the constructors build
   (`COALESCE`, `MIN`, `MAX`, `COUNT`, `date`, `changes`, `hex`, `unhex`,
   `lower`, `trim`, `unixepoch`, `randomblob`).
