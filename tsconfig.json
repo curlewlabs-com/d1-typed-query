@@ -1,0 +1,31 @@
+{
+  // The sources' own program. Their D1 types are the ambient ones
+  // @cloudflare/workers-types declares, as in the Worker that runs the frozen
+  // queries; nothing else is in scope, so a source that reached for a Bun or
+  // Node API would fail here.
+  //
+  // rootDir is the package boundary: tsc refuses any source the program
+  // reaches outside src/ (TS6059).
+  //
+  // The opt-in strictness flags are on so an app with the same flags can
+  // typecheck these sources as part of its own program, which it does, since
+  // the package ships TypeScript source.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "types": ["@cloudflare/workers-types"],
+    "rootDir": "src",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}
