@@ -215,9 +215,10 @@ number) at the declaration and at the mint, so two different maxima never share
 a type. The bind's domain is keyed by the element descriptor and the maximum,
 and its value type, `JsonArrayOf<T, Max>`, is minted only by
 `jsonArrayOf(values, maxLength)`. That mint refuses a maximum that is not a
-positive integer, and a longer list, at run time rather than binding it. The
-element must be non-null. Mint against the same constant the source declares, so
-the bound has one owner.
+positive integer, and a longer list, at run time rather than binding it. It also
+refuses NaN, an infinity and a missing array position, which JSON would carry as
+`null`. The element must be non-null. Mint against the same constant the source
+declares, so the bound has one owner.
 
 `jsonEach` returns the FROM occurrence and the element as an expression in the
 element's domain. JSON has no byte string, so a blob element travels as hex and
@@ -356,9 +357,10 @@ rewrites CASE as OR, or a scalar subquery as a join.
 
 The renderer emits positional SQL and ordered parameter names together, in one
 traversal. Repeated parameter nodes emit repeated placeholders and names, which
-`precomputed` and `.bound()` consume. The freezer copies that pair into a
-runtime module without parsing it, and the module refers to the authored query's
-type through an import that is erased.
+`precomputed` and `.bound()` consume; `precomputed` keeps a frozen copy of the
+names, so the bind-name check and the binding read one list. The freezer copies
+that pair into a runtime module without parsing it, and the module refers to the
+authored query's type through an import that is erased.
 
 The name check in `.bound()` is a runtime failure detector for untyped input.
 Its name set is allocated on a query's first bind, so loading a registry does

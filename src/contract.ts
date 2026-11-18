@@ -60,8 +60,12 @@ function assertParamNameAgreement(
 // together. Binding walks that order, including repeated names.
 export function precomputed<TParams extends Record<string, unknown>, R>(
   sql: string,
-  paramNames: readonly string[],
+  names: readonly string[],
 ): Query<TParams, R> {
+  // A copy, because the name check's set is built from these names on the
+  // first bind while binding reads them on every bind: a caller's array
+  // changed in between would let the two disagree.
+  const paramNames = Object.freeze([...names]);
   // Built on first bind, not here. A registry constructs every query it holds
   // when its module loads, so building the set here would cost one Set per
   // query the running path never binds.

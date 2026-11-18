@@ -213,12 +213,13 @@ declarations.
 
 ## What ships at runtime
 
-The runtime entry bundles to about 1.2 KB minified (`contract.ts`, `runtime.ts`
+The runtime entry bundles to about 1.5 KB minified (`contract.ts`, `runtime.ts`
 and `json-array.ts`; a test holds that list). At run time each query is its SQL
-string, its bind-name list, and the cost of `bound()`: one array map, and a
-check of the given keys against the query's bind names, held in a `Set` built
-the first time that query binds. The check catches a missing or misspelled key
-in untyped input. No builder module, schema or domain object is loaded.
+string, a frozen copy of its bind-name list made when the module loads, and the
+cost of `bound()`: one array map, and a check of the given keys against the
+query's bind names, held in a `Set` built the first time that query binds. The
+check catches a missing or misspelled key in untyped input. No builder module,
+schema or domain object is loaded.
 
 ## The inputs, and why each exists
 
@@ -318,18 +319,6 @@ Limits:
 - **Exact type comparisons.** The builder compares types exactly, so a program
   that names `EpochSeconds` or `Seconds` imports them from this package. A
   second declaration of the same shape is a different type to it.
-
-### Known issues
-
-These are in the code as it was built and run before publication. Both are
-reached by values the calling code passes.
-
-- **`jsonArrayOf` with NaN, an infinity or a hole.** `JSON.stringify` writes
-  each as `null`, so the source yields a NULL element its domain says cannot
-  occur.
-- **A `paramNames` array changed after `precomputed`.** The bind-name check
-  keeps the names of the first bind, while binding reads the array as it is
-  then.
 
 ## Development
 
