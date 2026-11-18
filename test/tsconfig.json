@@ -1,0 +1,23 @@
+{
+  // The tests' own program: Bun's types for bun:test and bun:sqlite, and the
+  // Workers types the runtime entry's D1 lowering names. The tests import the
+  // package by its own name, as an application does, so the DomainRelations
+  // augmentation they declare is the one an application writes.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "types": ["bun", "@cloudflare/workers-types"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["./**/*.ts"]
+}

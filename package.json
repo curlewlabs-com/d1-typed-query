@@ -1,0 +1,37 @@
+{
+  "name": "@curlewlabs-com/d1-typed-query",
+  "version": "0.1.0",
+  "description": "Type-checked SQL for Cloudflare D1, written with a typed builder and frozen to plain SQL at build time so the builder never ships in the Worker.",
+  "license": "MIT OR Apache-2.0",
+  "author": "Curlew Labs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/curlewlabs-com/d1-typed-query.git"
+  },
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime": "./src/runtime.ts",
+    "./freeze": "./src/freeze.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src/**/*.ts",
+    "README.md",
+    "docs/design.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p test/tsconfig.json",
+    "test": "bun test --no-install --timeout 60000 test"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261028.1",
+    "@types/bun": "1.4.4",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}
