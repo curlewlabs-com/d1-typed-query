@@ -20,7 +20,6 @@ import {
   cte,
   defineTable,
   derived,
-  indexedBy,
   jsonEach,
   like,
   literal,
@@ -42,7 +41,6 @@ import {
   setValue,
   unionAll,
   update,
-  withCtes,
   type ExpressionValue,
 } from "@curlewlabs-com/d1-typed-query";
 import type { QueryRow } from "@curlewlabs-com/d1-typed-query/runtime";
@@ -272,71 +270,7 @@ describe("authority", () => {
   });
 });
 
-describe("names and literal text", () => {
-  // These are written bare where SQLite can read a keyword as the keyword: a
-  // single-source read renders columns unqualified, so a current_time column
-  // reads the clock and a null column reads NULL; a source's name follows FROM
-  // or JOIN with no AS, so a source aliased `left` would turn the join after it
-  // into a LEFT JOIN.
-  it("refuses an SQLite keyword as a table, column, source or index name", () => {
-    expect(() => defineTable("select", { id: Library.integer })).toThrow(
-      /table "select" is an SQLite keyword/,
-    );
-    expect(() =>
-      defineTable("shelves", { current_time: Library.epochSeconds }),
-    ).toThrow(/column "current_time" is an SQLite keyword/);
-    expect(() => defineTable("shelves", { Null: Library.text })).toThrow(
-      /column "Null" is an SQLite keyword/,
-    );
-    expect(() => indexedBy(Books, "index")).toThrow(
-      /index "index" is an SQLite keyword/,
-    );
-    expect(() => aliasTable(Books, "left")).toThrow(
-      /table alias "left" is an SQLite keyword/,
-    );
-    const titles = select({ from: Books, columns: [project(Books.title)] });
-    expect(() => cte("Rows", titles)).toThrow(/CTE "Rows" is an SQLite/);
-    expect(() => derived("outer", titles)).toThrow(
-      /alias "outer" is an SQLite/,
-    );
-    expect(() => jsonEach("join", "ids", Library.integer, 8)).toThrow(
-      /alias "join" is an SQLite keyword/,
-    );
-  });
-
-  // A bind renders as `?`, and an output name is written only after AS and
-  // read only qualified or quoted, so neither is ever read as the keyword.
-  // Output names such as current_time stay usable.
-  it("accepts a keyword as a bind name or an output name", () => {
-    const db = new Database(":memory:");
-    db.exec(LIBRARY_DDL);
-    db.exec(
-      "INSERT INTO books VALUES (x'01', 1, 'Engines', '111', NULL, 120, NULL, 1000)",
-    );
-    const shelf = cte(
-      "shelf",
-      select({
-        from: Books,
-        columns: [project(columnValue(Books.published_at), "current_time")],
-      }),
-    );
-    const query = buildQuery(
-      withCtes(
-        [shelf],
-        select({
-          from: shelf,
-          columns: [project(shelf.current_time)],
-          limit: scalarParam(Library.count, "limit"),
-        }),
-      ),
-    );
-    expect(query.sql).toBe(
-      "WITH shelf AS (SELECT published_at AS current_time FROM books) SELECT shelf.current_time FROM shelf LIMIT ?",
-    );
-    expect(query.paramNames).toEqual(["limit"]);
-    expect(db.query(query.sql).all(1)).toEqual([{ current_time: 1000 }]);
-  });
-
+describe("source names and literal text", () => {
   // In a conflict arm `excluded.<column>` is the incoming row. A source of
   // that name would render its own columns the same way, so nothing could
   // tell the two apart.

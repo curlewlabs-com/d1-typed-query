@@ -9,6 +9,7 @@ import type { AnyExpression, AnyPredicate } from "./expressions";
 import { tableSource } from "./catalog";
 import type { AnyProjection, AnyOrder } from "./projections";
 import { assertStatement, type AnyStatement } from "./statements";
+import { sqlName } from "./identifiers";
 
 export interface RenderedQuery {
   readonly sql: string;
@@ -43,7 +44,8 @@ function columnSql(column: ColumnReference, local: TableSource | null): string {
   const qualifier = rendersBare(column, local)
     ? null
     : (column.source.alias ?? column.table);
-  return qualifier === null ? column.name : `${qualifier}.${column.name}`;
+  const name = sqlName(column.name);
+  return qualifier === null ? name : `${sqlName(qualifier)}.${name}`;
 }
 
 export function renderQuery(statement: AnyStatement): RenderedQuery {
@@ -60,7 +62,7 @@ export function renderQuery(statement: AnyStatement): RenderedQuery {
     explicitAlias = false,
   ): string {
     if (source.kind === "derived")
-      return `(${statementSql(source.query, scope)}) ${source.alias ?? source.table}`;
+      return `(${statementSql(source.query, scope)}) ${sqlName(source.alias ?? source.table)}`;
     if (source.kind === "json-each") {
       // One alias names one json_each occurrence, so a plan row walking that
       // alias maps to exactly one declared maximum.
@@ -76,16 +78,16 @@ export function renderQuery(statement: AnyStatement): RenderedQuery {
         }),
       );
       paramNames.push(source.param.name);
-      return `json_each(?) ${source.table}`;
+      return `json_each(?) ${sqlName(source.table)}`;
     }
     if (source.kind === "cte" && !scope.includes(source.definition))
       throw new Error("query-builder: CTE reference has no visible definition");
     const table =
       source.alias === null
-        ? source.table
-        : `${source.table}${explicitAlias ? " AS" : ""} ${source.alias}`;
+        ? sqlName(source.table)
+        : `${sqlName(source.table)}${explicitAlias ? " AS" : ""} ${sqlName(source.alias)}`;
     return source.kind === "indexed-table"
-      ? `${table} INDEXED BY ${source.index}`
+      ? `${table} INDEXED BY ${sqlName(source.index)}`
       : table;
   }
   function valuesSql(
@@ -160,7 +162,7 @@ export function renderQuery(statement: AnyStatement): RenderedQuery {
     }
     function projection(value: AnyProjection): string {
       const text = expression(value.value);
-      return value.alias === null ? text : `${text} AS ${value.alias}`;
+      return value.alias === null ? text : `${text} AS ${sqlName(value.alias)}`;
     }
     function where(value: AnyPredicate | null): string {
       return value === null ? "" : ` WHERE ${predicate(value)}`;
@@ -203,9 +205,13 @@ export function renderQuery(statement: AnyStatement): RenderedQuery {
             "query-builder: VALUES CTE needs a simple projection",
           );
         const { expression } = valuesSql(null, scope);
-        sql = `${definition.name}(${definition.query.outputs.map((output) => output.name).join(", ")}) AS${materialization} (VALUES (${tree.columns.map((column) => expression(column.value)).join(", ")}))`;
+        // cte() refuses an unnamed output, so every name here is a string.
+        const columns = definition.query.outputs.map((output) =>
+          sqlName(output.name as string),
+        );
+        sql = `${sqlName(definition.name)}(${columns.join(", ")}) AS${materialization} (VALUES (${tree.columns.map((column) => expression(column.value)).join(", ")}))`;
       } else {
-        sql = `${definition.name} AS${materialization} (${statementSql(definition.query, scope)})`;
+        sql = `${sqlName(definition.name)} AS${materialization} (${statementSql(definition.query, scope)})`;
       }
       definitions.push(sql);
       scope.push(definition);
@@ -264,28 +270,28 @@ export function renderQuery(statement: AnyStatement): RenderedQuery {
         break;
       }
       case "update":
-        sql = `UPDATE ${sourceSql(tree.source, scope, true)} SET ${tree.set.map((item) => `${item.column.name} = ${expression(item.value)}`).join(", ")}${where(tree.where)}`;
+        sql = `UPDATE ${sourceSql(tree.source, scope, true)} SET ${tree.set.map((item) => `${sqlName(item.column.name)} = ${expression(item.value)}`).join(", ")}${where(tree.where)}`;
         break;
       case "delete":
         sql = `DELETE FROM ${sourceSql(tree.source, scope)}${where(tree.where)}`;
         break;
       case "insert":
-        sql = `INSERT${tree.orIgnore ? " OR IGNORE" : ""} INTO ${sourceSql(tree.source, scope)} (${tree.values.map((item) => item.column.name).join(", ")}) SELECT ${tree.values.map((item) => expression(item.value)).join(", ")}${tree.from === null ? "" : ` FROM ${sourceSql(tree.from, scope)}`}${joinSql()}${where(tree.where)}`;
+        sql = `INSERT${tree.orIgnore ? " OR IGNORE" : ""} INTO ${sourceSql(tree.source, scope)} (${tree.values.map((item) => sqlName(item.column.name)).join(", ")}) SELECT ${tree.values.map((item) => expression(item.value)).join(", ")}${tree.from === null ? "" : ` FROM ${sourceSql(tree.from, scope)}`}${joinSql()}${where(tree.where)}`;
         if (tree.onConflict !== null) {
           const { target, action } = tree.onConflict;
           const targetSql = valuesSql(target.source, scope);
-          sql += ` ON CONFLICT (${target.columns.map((column) => column.name).join(", ")})${targetSql.where(target.where)}`;
+          sql += ` ON CONFLICT (${target.columns.map((column) => sqlName(column.name)).join(", ")})${targetSql.where(target.where)}`;
           if (action.kind === "nothing") {
             sql += " DO NOTHING";
           } else {
             const arm = valuesSql(null, scope);
-            sql += ` DO UPDATE SET ${action.set.map((item) => `${item.column.name} = ${arm.expression(item.value)}`).join(", ")}${arm.where(action.where)}`;
+            sql += ` DO UPDATE SET ${action.set.map((item) => `${sqlName(item.column.name)} = ${arm.expression(item.value)}`).join(", ")}${arm.where(action.where)}`;
           }
         }
         break;
     }
     if (tree.kind !== "select" && tree.returning.length !== 0)
-      sql += ` RETURNING ${tree.returning.map((column) => column.name).join(", ")}`;
+      sql += ` RETURNING ${tree.returning.map((column) => sqlName(column.name)).join(", ")}`;
     return sql;
   }
   const sql = statementSql(statement);
