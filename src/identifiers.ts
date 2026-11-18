@@ -6,12 +6,10 @@
 
 const SQL_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-// SQLite's keywords (https://www.sqlite.org/lang_keywords.html). The renderer
-// writes names unquoted, so a keyword name either fails to prepare (`select`)
-// or is read as the keyword: a bare `current_time` reads the clock, not a
-// column. SQLite lets some keywords stand as names where the grammar allows it,
-// but its documentation does not promise that a later release keeps doing so,
-// so every keyword is refused rather than the ones that fail today.
+// SQLite's keywords (https://www.sqlite.org/lang_keywords.html). SQLite lets
+// some stand as names where its grammar allows it, but its documentation does
+// not promise that a later release keeps doing so, so a name is refused for
+// every keyword, not only for the ones that fail today.
 const SQLITE_KEYWORDS = new Set(
   (
     "ABORT ACTION ADD AFTER ALL ALTER ALWAYS ANALYZE AND AS ASC ATTACH " +
@@ -32,8 +30,11 @@ const SQLITE_KEYWORDS = new Set(
   ).split(" "),
 );
 
-// The grammar alone. A bind name is checked only this far: it renders as `?`,
-// so a bind named `limit` never reaches the SQL text.
+// The grammar alone, which every name meets. A bind name is checked only this
+// far: it renders as `?`. So is an output name: it is written only after `AS`
+// and read only qualified or quoted (`c.current_time`,
+// `ORDER BY "current_time"`), so it is never read as the keyword. One SQLite
+// cannot parse after `AS` (`AS select`) fails when it is prepared.
 export function assertSqlIdentifier(token: string, kind: string): void {
   if (!SQL_IDENTIFIER.test(token)) {
     throw new Error(
@@ -42,7 +43,10 @@ export function assertSqlIdentifier(token: string, kind: string): void {
   }
 }
 
-// A name the SQL text carries: a column, an output alias, an index.
+// A name written bare where SQLite could read a keyword as the keyword: a
+// column, which a single-source read renders unqualified (`current_time` reads
+// the clock, `null` reads NULL); a source, whose name follows FROM or JOIN with
+// no `AS` (`FROM books left JOIN authors` is a LEFT JOIN); an index.
 export function assertSqlName(token: string, kind: string): void {
   assertSqlIdentifier(token, kind);
   if (SQLITE_KEYWORDS.has(token.toUpperCase()))

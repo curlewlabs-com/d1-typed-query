@@ -306,11 +306,14 @@ Limits:
 - **Literals.** They are text, NULL or safe integers; a blob or a fraction
   enters as a bind. Text holding NUL or a lone surrogate is refused, in a
   literal or a `like()` pattern, because SQL text cannot carry it.
-- **Names.** Table, column, alias, CTE and index names are written unquoted, so
-  each must be a plain identifier that is not an
-  [SQLite keyword](https://www.sqlite.org/lang_keywords.html). No table, alias
-  or CTE may be named `excluded`, the name an upsert's incoming row takes. Bind
-  names render as `?` and only need to be identifiers.
+- **Names.** Every name is written unquoted, so each is a plain identifier. A
+  table, column, alias, CTE or index name must not be an
+  [SQLite keyword](https://www.sqlite.org/lang_keywords.html): a bare
+  `current_time` column reads the clock, and a source aliased `left` turns the
+  join after it into a LEFT JOIN. An output name may be one, since it is written
+  only after `AS` and read only qualified or quoted; one SQLite cannot parse
+  there, such as `AS select`, fails when the statement is prepared. No table,
+  alias or CTE may be named `excluded`, the name an upsert's incoming row takes.
 - **Functions.** The SQL functions are the closed set the constructors build
   (`COALESCE`, `MIN`, `MAX`, `COUNT`, `date`, `changes`, `hex`, `unhex`,
   `lower`, `trim`, `unixepoch`, `randomblob`).
