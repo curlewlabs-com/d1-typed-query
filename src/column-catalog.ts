@@ -5,7 +5,7 @@
 
 import { assertDomain, type Domain, type ScalarDomain } from "./scalars";
 import type { TableSource } from "./source-catalog";
-import { assertSqlIdentifier } from "./identifiers";
+import { assertSqlName } from "./identifiers";
 
 const COLUMN: unique symbol = Symbol("SchemaColumn");
 
@@ -36,7 +36,7 @@ export class SchemaColumnCatalog {
     name: Name,
     domain: Domain<T>,
   ): Column<T, Name> {
-    assertSqlIdentifier(name, "column");
+    assertSqlName(name, "column");
     // A copied descriptor has the right shape and none of the identity the
     // domain checks compare, so it is refused at the column it would type.
     assertDomain(domain);

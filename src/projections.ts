@@ -12,7 +12,7 @@ import {
   type Expression,
   type ExpressionValue,
 } from "./expressions";
-import { assertSqlIdentifier } from "./identifiers";
+import { assertSqlName } from "./identifiers";
 
 const PROJECTION: unique symbol = Symbol("SqlProjection");
 const OUTPUT: unique symbol = Symbol("ProjectionValue");
@@ -101,7 +101,7 @@ export function project(
     column === null ? (value as AnyExpression) : columnValue(column);
   assertExpression(expression);
   const name = alias ?? column?.name ?? null;
-  if (name !== null) assertSqlIdentifier(name, "projection alias");
+  if (name !== null) assertSqlName(name, "projection alias");
   const result: AnyProjection = Object.freeze({
     [PROJECTION]: true as const,
     name,

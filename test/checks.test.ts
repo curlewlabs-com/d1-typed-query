@@ -5,28 +5,38 @@
 // declared refinements and stored UUIDs only, closed arithmetic, nullability
 // that follows LEFT JOIN, and one catalog.
 
+import { Database } from "bun:sqlite";
 import { describe, expect, it } from "bun:test";
 import {
   SchemaSourceCatalog,
   addDuration,
+  aliasTable,
   and,
   betweenInstants,
   buildQuery,
   columnValue,
   compare,
   count,
+  cte,
   defineTable,
+  derived,
+  indexedBy,
+  jsonEach,
+  like,
+  literal,
   lowerText,
   nullable,
   operation,
   refinement,
   trimText,
   eqParam,
+  existsValue,
   leftJoin,
   nullableParam,
   project,
   randomBlob16,
   refinedParam,
+  scalarLiteral,
   scalarParam,
   select,
   setValue,
@@ -45,6 +55,7 @@ import {
   type Genre,
   type Isbn,
   type Pages,
+  LIBRARY_DDL,
 } from "./library-schema";
 
 describe("binds", () => {
@@ -257,5 +268,103 @@ describe("authority", () => {
     expect(() => unionAll(arm(), arm(), arm(), arm(), arm(), arm())).toThrow(
       /SELECT arm limit/,
     );
+  });
+});
+
+describe("names and literal text", () => {
+  // Names are written unquoted, so a keyword either fails to prepare or is
+  // read as the keyword: a bare current_time column reads SQLite's clock.
+  it("refuses an SQLite keyword wherever a name reaches the SQL", () => {
+    expect(() => defineTable("select", { id: Library.integer })).toThrow(
+      /table "select" is an SQLite keyword/,
+    );
+    expect(() =>
+      defineTable("shelves", { current_time: Library.epochSeconds }),
+    ).toThrow(/column "current_time" is an SQLite keyword/);
+    expect(() => aliasTable(Books, "Order")).toThrow(
+      /table alias "Order" is an SQLite keyword/,
+    );
+    expect(() =>
+      project(columnValue(Books.published_at), "current_date"),
+    ).toThrow(/projection alias "current_date" is an SQLite keyword/);
+    expect(() => indexedBy(Books, "index")).toThrow(
+      /index "index" is an SQLite keyword/,
+    );
+    const titles = select({ from: Books, columns: [project(Books.title)] });
+    expect(() => cte("values", titles)).toThrow(/CTE "values"/);
+    expect(() => derived("group", titles)).toThrow(/alias "group"/);
+    expect(() => jsonEach("join", "ids", Library.integer, 8)).toThrow(
+      /alias "join"/,
+    );
+  });
+
+  // A bind renders as `?`, so its name never reaches the SQL text and may be
+  // a keyword, as `limit` naturally is.
+  it("accepts a keyword as a bind name", () => {
+    const query = buildQuery(
+      select({
+        from: Books,
+        columns: [project(Books.title)],
+        limit: scalarParam(Library.count, "limit"),
+      }),
+    );
+    expect(query.sql).toBe("SELECT title FROM books LIMIT ?");
+    expect(query.paramNames).toEqual(["limit"]);
+  });
+
+  // In a conflict arm `excluded.<column>` is the incoming row. A source of
+  // that name would render its own columns the same way, so nothing could
+  // tell the two apart.
+  it("reserves excluded for an upsert's incoming row", () => {
+    expect(() => defineTable("Excluded", { id: Library.integer })).toThrow(
+      /table "Excluded" is the name SQLite gives an upsert's incoming row/,
+    );
+    expect(() => aliasTable(Loans, "excluded")).toThrow(/table alias/);
+    const titles = select({ from: Books, columns: [project(Books.title)] });
+    expect(() => cte("excluded", titles)).toThrow(/CTE "excluded"/);
+    expect(() => derived("EXCLUDED", titles)).toThrow(/derived source alias/);
+    expect(() => jsonEach("excluded", "ids", Library.integer, 8)).toThrow(
+      /json_each source alias/,
+    );
+  });
+
+  // SQLite cannot prepare NUL inside a statement, and a lone surrogate has no
+  // UTF-8 form, so the statement would compare against U+FFFD instead.
+  it("refuses text SQL cannot carry in a literal or a LIKE pattern", () => {
+    for (const text of ["a\u0000b", "a\ud800", "\udc00"]) {
+      expect(() => literal(Books.title, text)).toThrow(
+        /NUL or a lone surrogate/,
+      );
+      expect(() => scalarLiteral(Library.text, text)).toThrow(
+        /literal holds NUL/,
+      );
+      expect(() => like(Books.title, text)).toThrow(/LIKE pattern holds NUL/);
+    }
+  });
+
+  // The surrogate check reads code points, so a well-formed pair outside the
+  // BMP is still written, and reaches SQLite as the same text.
+  it("carries quotes and characters outside the BMP exactly", () => {
+    const db = new Database(":memory:");
+    db.exec(LIBRARY_DDL);
+    const text = "it's \u{1F4DA}";
+    const query = buildQuery(
+      select({
+        columns: [
+          project(scalarLiteral(Library.text, text), "text"),
+          project(
+            existsValue(
+              select({
+                from: Books,
+                columns: [project(count(1), "n")],
+                where: like(Books.title, `%${text}`),
+              }),
+            ),
+            "matched",
+          ),
+        ],
+      }),
+    );
+    expect(db.query(query.sql).get()).toEqual({ text, matched: 0 });
   });
 });

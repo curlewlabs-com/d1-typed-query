@@ -303,7 +303,13 @@ Limits:
 - **UNION arms.** A compound SELECT is refused past five arms, because D1
   refuses six; SQLite's own default limit is 500.
 - **Literals.** They are text, NULL or safe integers; a blob or a fraction
-  enters as a bind.
+  enters as a bind. Text holding NUL or a lone surrogate is refused, in a
+  literal or a `like()` pattern, because SQL text cannot carry it.
+- **Names.** Table, column, alias, CTE and index names are written unquoted, so
+  each must be a plain identifier that is not an
+  [SQLite keyword](https://www.sqlite.org/lang_keywords.html). No table, alias
+  or CTE may be named `excluded`, the name an upsert's incoming row takes. Bind
+  names render as `?` and only need to be identifiers.
 - **Functions.** The SQL functions are the closed set the constructors build
   (`COALESCE`, `MIN`, `MAX`, `COUNT`, `date`, `changes`, `hex`, `unhex`,
   `lower`, `trim`, `unixepoch`, `randomblob`).
@@ -322,18 +328,10 @@ calling code passes.
 - **A CTE named like a table defined after it.** `cte()` refuses a name that is
   already a table, but a table defined later with the CTE's name is not checked,
   so a read of that table inside the CTE's scope reads the CTE.
-- **A destination table named `excluded`.** Its own columns and the incoming row
-  both render as `excluded.<column>` in a conflict arm.
 - **ORDER BY by a bare name or a literal.** A single-source read orders by a
   bare column name, which SQLite resolves to an output alias of the same name
   first. `orderBy(count(n))` renders an integer, which SQLite reads as an output
   position.
-- **Keywords as identifiers.** Identifiers are emitted unquoted, and only their
-  characters are checked. A table or column named after an SQLite keyword either
-  fails to prepare or, for `current_time`, `current_date` and
-  `current_timestamp`, reads SQLite's clock instead of the column.
-- **Text containing NUL.** A literal or `like()` pattern containing U+0000 is
-  rendered into SQL that SQLite cannot prepare.
 - **`jsonArrayOf` with NaN, an infinity or a hole.** `JSON.stringify` writes
   each as `null`, so the source yields a NULL element its domain says cannot
   occur.
