@@ -2,7 +2,7 @@
 // Aggregate cardinality, projection identity, ordering and LIMIT must agree
 // before statement construction grants nominal identity and bind agreement.
 
-import type { TableSource } from "./catalog";
+import type { ColumnReference, TableSource } from "./catalog";
 import type { Parameterized, Requirements } from "./params";
 import type { SelectInput, SelectTree } from "./statements";
 import { ReadScope, sourceRequirements } from "./sources";
@@ -11,7 +11,12 @@ import {
   type AnyExpression,
   type AnyPredicate,
 } from "./expressions";
-import { assertProjection, assertOrder } from "./projections";
+import {
+  assertProjection,
+  assertOrder,
+  type AnyProjection,
+} from "./projections";
+import { rendersBare } from "./renderer";
 import { SqliteScalars } from "./scalars";
 
 // SQLite permits bare columns beside aggregates, but an empty input makes even
@@ -153,6 +158,50 @@ function assertPredicateAggregateScope(
   }
 }
 
+// A conversion renders as its operand, so it orders as its operand does.
+function orderedTree(value: AnyExpression): AnyExpression["tree"] {
+  let tree = value.tree;
+  while (tree.kind === "conversion") tree = tree.value.tree;
+  return tree;
+}
+
+function isRead(value: AnyExpression, column: ColumnReference): boolean {
+  const tree = orderedTree(value);
+  return (
+    tree.kind === "column" &&
+    tree.column.source === column.source &&
+    tree.column.name === column.name
+  );
+}
+
+// SQLite reads an ORDER BY term that is a bare name as an output alias of that
+// name before it reads an input column, and a term that is an integer constant
+// as an output position (https://www.sqlite.org/lang_select.html#orderby).
+// Either would order by something other than the expression the term was built
+// from, so both are refused; a qualified column is not read as an alias.
+function assertOrderingKeepsItsMeaning(
+  value: AnyExpression,
+  columns: readonly AnyProjection[],
+  local: TableSource | null,
+): void {
+  const tree = orderedTree(value);
+  if (tree.kind === "literal" && typeof tree.value === "number")
+    throw new Error(
+      "query-builder: ordering by an integer constant orders by an output position",
+    );
+  if (tree.kind !== "column" || !rendersBare(tree.column, local)) return;
+  const name = tree.column.name.toLowerCase();
+  const alias = columns.find(
+    (column) =>
+      column.alias?.toLowerCase() === name &&
+      !isRead(column.value, tree.column),
+  );
+  if (alias !== undefined)
+    throw new Error(
+      `query-builder: ordering by "${tree.column.name}" would order by the output alias "${alias.alias}"`,
+    );
+}
+
 export function assertLimit(limit: AnyExpression): void {
   assertExpression(limit);
   if (
@@ -201,6 +250,8 @@ export class SelectBody<I extends SelectInput> {
         "query-builder: aggregate projection cannot read ungrouped columns",
       );
     const where = ReadScope.where(input.where, visible);
+    // The source the renderer leaves its columns unqualified for (rendersBare).
+    const local = joins.length === 0 ? source : null;
     const orderBy = Object.freeze([...(input.orderBy ?? [])]);
     for (const order of orderBy) {
       assertOrder(order);
@@ -212,6 +263,7 @@ export class SelectBody<I extends SelectInput> {
             throw new Error(
               "query-builder: aggregate ordering needs an aggregate projection",
             );
+          assertOrderingKeepsItsMeaning(order.tree.value, input.columns, local);
           break;
         case "projection": {
           const projection = order.tree.projection;

@@ -122,7 +122,10 @@ export type NullableTable<T extends TableReference> = {
 } & Pick<T, Exclude<keyof T, string>>;
 
 export class SchemaSourceCatalog {
+  // A CTE in scope shadows a table of the same name for every read inside
+  // that scope, so neither name may take the other's, whichever comes first.
   private readonly physicalTableNames = new Set<string>();
+  private readonly cteNames = new Set<string>();
   private readonly columnCatalog = new SchemaColumnCatalog();
   private readonly tablesCreated = new WeakSet<object>();
 
@@ -132,6 +135,8 @@ export class SchemaSourceCatalog {
     domains: D,
   ): DefinedTable<D> {
     assertSourceName(table, "table");
+    if (this.cteNames.has(table.toLowerCase()))
+      throw new Error("query-builder: table cannot take a CTE's name");
     this.physicalTableNames.add(table.toLowerCase());
     const source: TableSource = Object.freeze({
       [SOURCE_IDENTITY]: true as const,
@@ -332,6 +337,7 @@ export class SchemaSourceCatalog {
       form,
       materialization,
     });
+    this.cteNames.add(name.toLowerCase());
     const source: TableSource = Object.freeze({
       [SOURCE_IDENTITY]: true as const,
       kind: "cte" as const,

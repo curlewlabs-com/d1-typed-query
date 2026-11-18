@@ -25,12 +25,24 @@ export interface JsonEachOccurrence {
   readonly maxLength: number;
 }
 
+// A column of the statement's one FROM source, when that source has no alias
+// and is not a CTE, renders as its bare name. `local` is that source, or null
+// when the statement joins.
+export function rendersBare(
+  column: ColumnReference,
+  local: TableSource | null,
+): boolean {
+  return (
+    column.source.alias === null &&
+    column.source === local &&
+    column.source.kind !== "cte"
+  );
+}
+
 function columnSql(column: ColumnReference, local: TableSource | null): string {
-  const qualifier =
-    column.source.alias ??
-    (column.source === local && column.source.kind !== "cte"
-      ? null
-      : column.table);
+  const qualifier = rendersBare(column, local)
+    ? null
+    : (column.source.alias ?? column.table);
   return qualifier === null ? column.name : `${qualifier}.${column.name}`;
 }
 

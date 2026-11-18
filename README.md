@@ -321,17 +321,9 @@ Limits:
 
 ### Known issues
 
-These are in the code as it was built and run before publication. All but the
-last two are reached only by how a query is written; the last two by values the
-calling code passes.
+These are in the code as it was built and run before publication. Both are
+reached by values the calling code passes.
 
-- **A CTE named like a table defined after it.** `cte()` refuses a name that is
-  already a table, but a table defined later with the CTE's name is not checked,
-  so a read of that table inside the CTE's scope reads the CTE.
-- **ORDER BY by a bare name or a literal.** A single-source read orders by a
-  bare column name, which SQLite resolves to an output alias of the same name
-  first. `orderBy(count(n))` renders an integer, which SQLite reads as an output
-  position.
 - **`jsonArrayOf` with NaN, an infinity or a hole.** `JSON.stringify` writes
   each as `null`, so the source yields a NULL element its domain says cannot
   occur.

@@ -1,8 +1,9 @@
 // The remaining statement forms run against SQLite (DELETE, the two ways an
 // insert meets a conflict, INSERT from a read, UNION's deduplication), and the
 // scope and row guarantees construction holds: declared outer sources, CTEs
-// that must be attached in order, compound arms that must agree, and the two
-// subquery forms that keep a non-null result.
+// that must be attached in order and keep apart from table names, ordering
+// terms SQLite would read as something else, compound arms that must agree,
+// and the two subquery forms that keep a non-null result.
 
 import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, it } from "bun:test";
@@ -16,12 +17,14 @@ import {
   conflictDoNothing,
   count,
   cte,
+  defineTable,
   deleteFrom,
   eqParam,
   exists,
   insert,
   isNotNull,
   operation,
+  orderBy,
   project,
   requiredScalarSubquery,
   scalarParam,
@@ -236,6 +239,66 @@ describe("scope", () => {
     ).toBe(
       "WITH first_author(id) AS (VALUES (?)), later AS (SELECT first_author.id FROM first_author) SELECT later.id FROM later",
     );
+  });
+
+  // A CTE shadows a table of its name for every read inside its WITH scope,
+  // so a table defined after the CTE must not take that name either.
+  it("keeps CTE and table names apart whichever is defined first", () => {
+    const shelf = select({ from: Books, columns: [project(Books.title)] });
+    cte("Reading_List", shelf);
+    expect(() => defineTable("reading_list", { title: Library.text })).toThrow(
+      /table cannot take a CTE's name/,
+    );
+    expect(() => cte("BOOKS", shelf)).toThrow(/cannot shadow a physical table/);
+  });
+
+  // SQLite reads a bare ORDER BY name as an output alias before an input
+  // column. A single-source read renders its columns bare, so ordering by
+  // pages while projecting the title as "pages" would sort by the title.
+  it("refuses a bare ordering name that an output alias would capture", () => {
+    expect(() =>
+      select({
+        from: Books,
+        columns: [project(columnValue(Books.title), "pages")],
+        orderBy: [orderBy(Books.pages)],
+      }),
+    ).toThrow(/ordering by "pages" would order by the output alias "pages"/);
+    const sameColumn = select({
+      from: Books,
+      columns: [
+        project(Books.title),
+        project(columnValue(Books.pages), "pages"),
+      ],
+      orderBy: [orderBy(Books.pages, "DESC")],
+    });
+    expect(buildQuery(sameColumn).sql).toBe(
+      "SELECT title, pages AS pages FROM books ORDER BY pages DESC",
+    );
+    const b = aliasTable(Books, "b");
+    const qualified = select({
+      from: b,
+      columns: [project(columnValue(b.title), "pages")],
+      orderBy: [orderBy(b.pages)],
+    });
+    expect(buildQuery(qualified).sql).toBe(
+      "SELECT b.title AS pages FROM books b ORDER BY b.pages",
+    );
+    expect(run(qualified)).toEqual([
+      { pages: "Tides" },
+      { pages: "Looms" },
+      { pages: "Engines" },
+    ]);
+  });
+
+  // An integer constant in ORDER BY is an output position, not a value.
+  it("refuses ordering by an integer constant", () => {
+    expect(() =>
+      select({
+        from: Books,
+        columns: [project(Books.title), project(Books.pages)],
+        orderBy: [orderBy(count(2))],
+      }),
+    ).toThrow(/orders by an output position/);
   });
 
   it("refuses compound arms whose outputs disagree", () => {
