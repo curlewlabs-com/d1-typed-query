@@ -306,14 +306,15 @@ Limits:
 - **Literals.** They are text, NULL or safe integers; a blob or a fraction
   enters as a bind. Text holding NUL or a lone surrogate is refused, in a
   literal or a `like()` pattern, because SQL text cannot carry it.
-- **Names.** Every name is written unquoted, so each is a plain identifier. A
-  table, column, alias, CTE or index name must not be an
-  [SQLite keyword](https://www.sqlite.org/lang_keywords.html): a bare
-  `current_time` column reads the clock, and a source aliased `left` turns the
-  join after it into a LEFT JOIN. An output name may be one, since it is written
-  only after `AS` and read only qualified or quoted; one SQLite cannot parse
-  there, such as `AS select`, fails when the statement is prepared. No table,
-  alias or CTE may be named `excluded`, the name an upsert's incoming row takes.
+- **Names.** Every name is a plain identifier. One that is an
+  [SQLite keyword](https://www.sqlite.org/lang_keywords.html) is written in
+  square brackets (`[key]`), so a `key`, `order` or `current_time` column reads
+  that column, and a source aliased `left` stays an alias. Brackets rather than
+  double quotes, because SQLite reads a double-quoted name that matches no
+  column as a string: a keyword column missing from the database fails to
+  prepare instead. Every other name is written as given. No table, alias or CTE
+  may be named `excluded`, the name an upsert's incoming row takes, which
+  quoting cannot tell apart.
 - **Functions.** The SQL functions are the closed set the constructors build
   (`COALESCE`, `MIN`, `MAX`, `COUNT`, `date`, `changes`, `hex`, `unhex`,
   `lower`, `trim`, `unixepoch`, `randomblob`).

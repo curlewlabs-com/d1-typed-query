@@ -10,11 +10,7 @@ import {
   type DomainValue,
   type ScalarDomain,
 } from "./scalars";
-import {
-  assertSourceName,
-  assertSqlIdentifier,
-  assertSqlName,
-} from "./identifiers";
+import { assertSourceName, assertSqlIdentifier } from "./identifiers";
 
 import type { AnyOutputColumn, OutputValue } from "./projections";
 import type {
@@ -135,7 +131,6 @@ export class SchemaSourceCatalog {
     domains: D,
   ): DefinedTable<D> {
     assertSourceName(table, "table");
-    for (const name of Object.keys(domains)) assertSqlName(name, "column");
     if (this.cteNames.has(table.toLowerCase()))
       throw new Error("query-builder: table cannot take a CTE's name");
     this.physicalTableNames.add(table.toLowerCase());
@@ -235,7 +230,7 @@ export class SchemaSourceCatalog {
    * See docs/design.md sec."Joined source construction".
    */
   indexedBy<T extends TableReference>(table: T, index: string): T {
-    assertSqlName(index, "index");
+    assertSqlIdentifier(index, "index");
     const original = this.tableSource(table);
     if (original.kind !== "table")
       throw new Error(

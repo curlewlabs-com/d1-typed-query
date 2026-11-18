@@ -1,4 +1,5 @@
-// Validation of the SQL identifiers query construction accepts.
+// Validation of the SQL identifiers query construction accepts, and the form
+// the renderer writes each one in.
 
 // SQL identifiers are authored tokens rather than SQL fragments. Keeping this
 // boundary shared prevents schema, alias, and parameter constructors from
@@ -6,10 +7,11 @@
 
 const SQL_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-// SQLite's keywords (https://www.sqlite.org/lang_keywords.html). SQLite lets
-// some stand as names where its grammar allows it, but its documentation does
-// not promise that a later release keeps doing so, so a name is refused for
-// every keyword, not only for the ones that fail today.
+// SQLite's keywords, as sqlite3_keyword_name() lists them in SQLite 3.54.0
+// (https://www.sqlite.org/lang_keywords.html); a test prepares each one as a
+// table, column and alias name. SQLite lets some keywords stand bare as names
+// where its grammar allows, but not all, and a bare current_time reads the
+// clock rather than a column of that name.
 const SQLITE_KEYWORDS = new Set(
   (
     "ABORT ACTION ADD AFTER ALL ALTER ALWAYS ANALYZE AND AS ASC ATTACH " +
@@ -30,11 +32,7 @@ const SQLITE_KEYWORDS = new Set(
   ).split(" "),
 );
 
-// The grammar alone, which every name meets. A bind name is checked only this
-// far: it renders as `?`. So is an output name: it is written only after `AS`
-// and read only qualified or quoted (`c.current_time`,
-// `ORDER BY "current_time"`), so it is never read as the keyword. One SQLite
-// cannot parse after `AS` (`AS select`) fails when it is prepared.
+// The grammar alone. A bind name is checked only this far: it renders as `?`.
 export function assertSqlIdentifier(token: string, kind: string): void {
   if (!SQL_IDENTIFIER.test(token)) {
     throw new Error(
@@ -43,23 +41,26 @@ export function assertSqlIdentifier(token: string, kind: string): void {
   }
 }
 
-// A name written bare where SQLite could read a keyword as the keyword: a
-// column, which a single-source read renders unqualified (`current_time` reads
-// the clock, `null` reads NULL); a source, whose name follows FROM or JOIN with
-// no `AS` (`FROM books left JOIN authors` is a LEFT JOIN); an index.
-export function assertSqlName(token: string, kind: string): void {
-  assertSqlIdentifier(token, kind);
-  if (SQLITE_KEYWORDS.has(token.toUpperCase()))
-    throw new Error(`query-builder: ${kind} "${token}" is an SQLite keyword`);
-}
-
 // A name that qualifies columns: a table, an alias, a CTE. In an upsert's
 // conflict arm `excluded` names the incoming row, so a source of that name
-// would render its own columns exactly as the incoming row's.
+// would render its own columns exactly as the incoming row's, and quoting it
+// would not tell them apart.
 export function assertSourceName(token: string, kind: string): void {
-  assertSqlName(token, kind);
+  assertSqlIdentifier(token, kind);
   if (token.toLowerCase() === "excluded")
     throw new Error(
       `query-builder: ${kind} "${token}" is the name SQLite gives an upsert's incoming row`,
     );
+}
+
+// The identifier as the SQL text carries it: a keyword in square brackets, so
+// SQLite reads it as the name, and every other identifier bare, exactly as
+// written. Brackets rather than double quotes: SQLite reads a double-quoted
+// name that matches no column as a string literal, so a keyword column the
+// database lacks would read as its own name instead of failing to prepare. A
+// bracketed name is only ever an identifier, a form SQLite documents as
+// accepted (https://www.sqlite.org/lang_keywords.html). The grammar admits no
+// `]`, so no escaping is needed.
+export function sqlName(token: string): string {
+  return SQLITE_KEYWORDS.has(token.toUpperCase()) ? `[${token}]` : token;
 }
