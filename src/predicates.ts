@@ -13,6 +13,7 @@ import {
   type CompatibleValue,
 } from "./expressions";
 import { acceptsDomain, nonNullableDomain } from "./scalars";
+import { assertLiteralText } from "./literal-text";
 import {
   collectRequirements,
   type CollectRequirements,
@@ -426,5 +427,6 @@ export function like<C extends ColumnReference>(
   const value = columnValue(column);
   if (value.domain.storage !== "text")
     throw new Error("query-builder: LIKE requires a text column");
+  assertLiteralText(pattern, "LIKE pattern");
   return predicate({ kind: "like", value, pattern, negate }, value.sources, []);
 }

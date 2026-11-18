@@ -32,6 +32,7 @@ import {
 } from "./params";
 import { assertPredicate, type AnyPredicate } from "./predicates";
 import { assertSqlIdentifier } from "./identifiers";
+import { assertLiteralText } from "./literal-text";
 import type { AnySelect } from "./statements";
 import { isSubqueryExpression, type SubqueryIdentity } from "./subqueries";
 
@@ -346,8 +347,11 @@ export function countParam<const Name extends string>(
 }
 
 function literalTree(value: unknown): ExpressionTree {
-  if (typeof value === "string" || value === null)
+  if (value === null) return { kind: "literal", value };
+  if (typeof value === "string") {
+    assertLiteralText(value, "literal");
     return { kind: "literal", value };
+  }
   if (typeof value === "number" && Number.isSafeInteger(value))
     return { kind: "literal", value };
   throw new Error(

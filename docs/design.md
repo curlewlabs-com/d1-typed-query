@@ -58,10 +58,15 @@ output-name ordering from ordinary ordering expressions.
   projection object's identity; another projection with the same name is not a
   member.
 - **SQL identifiers.** Constructors accept unquoted identifier tokens only:
-  whitespace, quoted names, hyphens and punctuation fail closed.
+  whitespace, quoted names, hyphens and punctuation fail closed. A name the SQL
+  text carries is also refused when it is an SQLite keyword, which SQLite would
+  read as the keyword (`current_time` as the clock) or fail to prepare. A source
+  name is refused when it is `excluded`, which in a conflict arm names the
+  incoming row. A bind name renders as `?`, so only its token shape is checked.
 - **SQL literal contents.** Literal encoding escapes strings and refuses
-  non-finite and non-integer numbers. Text inside a string is data, never parsed
-  as SQL.
+  non-finite and non-integer numbers, and text holding NUL or a lone surrogate,
+  which a statement cannot carry. Text inside a string is data, never parsed as
+  SQL.
 
 ## Composable expressions and statements
 

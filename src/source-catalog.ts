@@ -10,7 +10,11 @@ import {
   type DomainValue,
   type ScalarDomain,
 } from "./scalars";
-import { assertSqlIdentifier } from "./identifiers";
+import {
+  assertSourceName,
+  assertSqlIdentifier,
+  assertSqlName,
+} from "./identifiers";
 
 import type { AnyOutputColumn, OutputValue } from "./projections";
 import type {
@@ -127,7 +131,7 @@ export class SchemaSourceCatalog {
     table: string,
     domains: D,
   ): DefinedTable<D> {
-    assertSqlIdentifier(table, "table");
+    assertSourceName(table, "table");
     this.physicalTableNames.add(table.toLowerCase());
     const source: TableSource = Object.freeze({
       [SOURCE_IDENTITY]: true as const,
@@ -168,7 +172,7 @@ export class SchemaSourceCatalog {
     alias: string,
     nullExtended: boolean,
   ): T | NullableTable<T> {
-    assertSqlIdentifier(alias, "table alias");
+    assertSourceName(alias, "table alias");
     const original = this.tableSource(table);
     if (original.kind === "excluded")
       throw new Error("query-builder: excluded source cannot be aliased");
@@ -225,7 +229,7 @@ export class SchemaSourceCatalog {
    * See docs/design.md sec."Joined source construction".
    */
   indexedBy<T extends TableReference>(table: T, index: string): T {
-    assertSqlIdentifier(index, "index");
+    assertSqlName(index, "index");
     const original = this.tableSource(table);
     if (original.kind !== "table")
       throw new Error(
@@ -291,7 +295,7 @@ export class SchemaSourceCatalog {
       readonly materialization?: "default" | "materialized";
     } = {},
   ): CteReference<RequirementsOf<S>> & CteColumns<S["outputs"]> {
-    assertSqlIdentifier(name, "CTE");
+    assertSourceName(name, "CTE");
     assertSelect(query);
     if (this.physicalTableNames.has(name.toLowerCase()))
       throw new Error("query-builder: CTE cannot shadow a physical table");
@@ -367,7 +371,7 @@ export class SchemaSourceCatalog {
     alias: string,
     query: S,
   ): TableReference<RequirementsOf<S>> & DerivedColumns<S["outputs"]> {
-    assertSqlIdentifier(alias, "derived source alias");
+    assertSourceName(alias, "derived source alias");
     assertSelect(query);
     if (query.sources.length !== 0)
       throw new Error(
@@ -421,7 +425,7 @@ export class SchemaSourceCatalog {
     element: Domain<T>,
     maxLength: Max & NumericLiteral<Max>,
   ): JsonEachReference<N, T, Max> {
-    assertSqlIdentifier(alias, "json_each source alias");
+    assertSourceName(alias, "json_each source alias");
     assertSqlIdentifier(name, "parameter");
     const param: RuntimeRequirement = Object.freeze({
       name,
