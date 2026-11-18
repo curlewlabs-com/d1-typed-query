@@ -16,7 +16,7 @@ import { assertSqlIdentifier } from "./identifiers";
 
 const PROJECTION: unique symbol = Symbol("SqlProjection");
 const OUTPUT: unique symbol = Symbol("ProjectionValue");
-const projections = new WeakSet<object>();
+const projections = new WeakSet();
 
 export interface Projection<
   Name extends string | null,
@@ -120,7 +120,7 @@ export function assertProjection(value: AnyProjection): void {
 }
 
 const ORDER: unique symbol = Symbol("SqlOrder");
-const orders = new WeakSet<object>();
+const orders = new WeakSet();
 export interface Order<P extends Requirements> extends Parameterized<P> {
   readonly [ORDER]: true;
   readonly tree:
@@ -149,17 +149,24 @@ export function orderBy(
 ): AnyOrder {
   const expression = isColumn(value) ? columnValue(value) : value;
   assertExpression(expression);
-  if (direction !== undefined && direction !== "ASC" && direction !== "DESC")
-    throw new Error("query-builder: invalid order direction");
+  const checked = checkedDirection(direction);
   const result: AnyOrder = Object.freeze({
     [ORDER]: true as const,
     tree: Object.freeze({ kind: "expression" as const, value: expression }),
-    direction: direction ?? null,
+    direction: checked,
     sources: expression.sources,
     requirements: expression.requirements,
   });
   orders.add(result);
   return result;
+}
+
+// Read as unknown: an untyped caller reaches this check, and the parameter's type
+// does not constrain what it passes.
+function checkedDirection(direction: unknown): "ASC" | "DESC" | null {
+  if (direction !== undefined && direction !== "ASC" && direction !== "DESC")
+    throw new Error("query-builder: invalid order direction");
+  return direction ?? null;
 }
 
 function projectionOrder(
@@ -168,14 +175,15 @@ function projectionOrder(
   direction?: "ASC" | "DESC",
 ): Order<readonly []> {
   assertProjection(projection);
-  if (projection.name === null)
+  // Read as unknown: an untyped caller can pass an unnamed projection here.
+  const name: unknown = projection.name;
+  if (name === null)
     throw new Error("query-builder: ordering needs a named projection");
-  if (direction !== undefined && direction !== "ASC" && direction !== "DESC")
-    throw new Error("query-builder: invalid order direction");
+  const checked = checkedDirection(direction);
   const result: Order<readonly []> = Object.freeze({
     [ORDER]: true as const,
     tree: Object.freeze({ kind: "projection" as const, projection, isNotNull }),
-    direction: direction ?? null,
+    direction: checked,
     sources: Object.freeze([]),
     requirements: Object.freeze([]),
   });

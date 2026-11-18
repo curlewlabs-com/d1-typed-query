@@ -28,7 +28,7 @@ export interface Column<
 export type BrandOf<C> = C extends Column<infer T> ? T : never;
 
 export class SchemaColumnCatalog {
-  private readonly columns = new WeakSet<object>();
+  private readonly columns = new WeakSet();
 
   /** Registers the descriptor only with this catalog, never a global authority. */
   create<T, Name extends string>(

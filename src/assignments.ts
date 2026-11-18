@@ -27,7 +27,7 @@ import { ReadScope } from "./sources";
 
 const ASSIGNMENT: unique symbol = Symbol("SqlAssignment");
 const INVALID_TARGET: unique symbol = Symbol("InvalidAssignmentTarget");
-const assignments = new WeakSet<object>();
+const assignments = new WeakSet();
 
 export interface Assignment<P extends Requirements> extends Parameterized<P> {
   readonly [ASSIGNMENT]: true;

@@ -59,7 +59,7 @@ const CTE_KEYWORD = "rows";
 
 function library(): Database {
   const db = new Database(":memory:");
-  db.exec(LIBRARY_DDL);
+  db.run(LIBRARY_DDL);
   return db;
 }
 
@@ -103,8 +103,8 @@ describe("keyword names", () => {
       expect(joined.sql).toBe(
         `SELECT ${q}.${q} AS ${q} FROM ${q} ${q} JOIN books ON books.pages = ${q}.${q}`,
       );
-      db.exec(`CREATE TABLE ${q} (${q} INTEGER NOT NULL)`);
-      db.exec(`INSERT INTO ${q} VALUES (7)`);
+      db.run(`CREATE TABLE ${q} (${q} INTEGER NOT NULL)`);
+      db.run(`INSERT INTO ${q} VALUES (7)`);
       expect(db.query(read.sql).all(7)).toEqual([{ [keyword]: 7 }]);
       expect(db.query(joined.sql).all()).toEqual([]);
     }
@@ -119,7 +119,7 @@ describe("keyword names", () => {
       id: Library.integer,
       key: Library.text,
     });
-    db.exec("CREATE TABLE drifted (id INTEGER NOT NULL) STRICT");
+    db.run("CREATE TABLE drifted (id INTEGER NOT NULL) STRICT");
     const bare = buildQuery(
       select({ from: Drifted, columns: [project(Drifted.key)] }),
     );
@@ -167,7 +167,7 @@ describe("keyword names", () => {
       Key: Library.text,
       current_time: Library.epochSeconds,
     });
-    db.exec(`
+    db.run(`
       CREATE TABLE "Order" ("Key" TEXT PRIMARY KEY, "current_time" INTEGER NOT NULL) STRICT;
       CREATE INDEX "index" ON "Order" ("current_time");
     `);

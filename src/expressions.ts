@@ -40,7 +40,7 @@ import { isArithmeticExpression, type ArithmeticIdentity } from "./arithmetic";
 
 const EXPRESSION: unique symbol = Symbol("SqlExpression");
 const TYPE_ERROR: unique symbol = Symbol("IncompatibleSqlDomain");
-const expressionNodes = new WeakSet<object>();
+const expressionNodes = new WeakSet();
 
 export type NullableColumn<C extends ColumnReference> =
   null extends BrandOf<C>

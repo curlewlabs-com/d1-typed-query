@@ -15,7 +15,7 @@ import { assertPredicate, type AnyPredicate } from "./expressions";
 import type { Parameterized, Requirements, RequirementsOf } from "./params";
 
 const JOIN: unique symbol = Symbol("JoinClause");
-const joinsCreated = new WeakSet<object>();
+const joinsCreated = new WeakSet();
 export type SourceInput = TableReference | SourceColumn;
 
 type JoinClause =

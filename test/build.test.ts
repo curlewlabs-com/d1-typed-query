@@ -60,8 +60,8 @@ import {
 let db: Database;
 beforeEach(() => {
   db = new Database(":memory:");
-  db.exec(LIBRARY_DDL);
-  db.exec(`
+  db.run(LIBRARY_DDL);
+  db.run(`
     INSERT INTO authors VALUES (1, 'Ada', NULL), (2, 'Basil', 100);
     INSERT INTO books VALUES (x'01', 1, 'Engines', '111', 'history', 120, NULL, 1000),
                              (x'02', 1, 'Looms', '222', NULL, 80, x'22', 2000),

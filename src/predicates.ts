@@ -32,7 +32,7 @@ import {
 import type { OutputValue } from "./projections";
 
 const PREDICATE: unique symbol = Symbol("SqlPredicate");
-const predicateNodes = new WeakSet<object>();
+const predicateNodes = new WeakSet();
 
 export type Comparison = "=" | "!=" | "<>" | "<" | "<=" | ">" | ">=" | "IS NOT";
 type PredicateTree =

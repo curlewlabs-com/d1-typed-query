@@ -123,7 +123,7 @@ export class SchemaSourceCatalog {
   private readonly physicalTableNames = new Set<string>();
   private readonly cteNames = new Set<string>();
   private readonly columnCatalog = new SchemaColumnCatalog();
-  private readonly tablesCreated = new WeakSet<object>();
+  private readonly tablesCreated = new WeakSet();
 
   /** Schema declarations mint columns only in their own catalog's authority. */
   defineTable<const D extends Record<string, ScalarDomain>>(
@@ -302,10 +302,12 @@ export class SchemaSourceCatalog {
       throw new Error("query-builder: CTE cannot shadow a physical table");
     if (query.sources.length !== 0)
       throw new Error("query-builder: CTE cannot capture outer sources");
-    const form = options.form ?? "select";
+    // Read as unknown: an untyped caller reaches these checks, and the option
+    // types do not constrain what it passes.
+    const form: unknown = options.form ?? "select";
     if (form !== "select" && form !== "values")
       throw new Error("query-builder: invalid CTE form");
-    const materialization = options.materialization ?? "default";
+    const materialization: unknown = options.materialization ?? "default";
     if (materialization !== "default" && materialization !== "materialized")
       throw new Error("query-builder: invalid CTE materialization");
     const tree = query.tree;

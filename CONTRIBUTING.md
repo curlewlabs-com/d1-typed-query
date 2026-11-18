@@ -18,6 +18,10 @@ bun run test
 The tests prepare and run the rendered SQL against SQLite through `bun:sqlite`;
 they need no Cloudflare account.
 
+eslint runs in CI through ci-baseline. To run the same check locally, after
+installing dependencies: `<a ci-baseline checkout>/lib/lint-local.sh`. It runs
+the ci-baseline commit this repository's workflows pin.
+
 ## Maintainership and review
 
 Curlew Labs maintains this project. Jeffrey Wall
