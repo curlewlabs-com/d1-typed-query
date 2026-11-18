@@ -45,7 +45,7 @@ semantics as D1 runs them, and no dialect switch.
 Install the release tarball (the package is not on npm):
 
 ```sh
-bun add https://github.com/curlewlabs-com/d1-typed-query/releases/download/v0.1.0/curlewlabs-com-d1-typed-query-0.1.0.tgz
+bun add https://github.com/curlewlabs-com/d1-typed-query/releases/download/v0.2.0/curlewlabs-com-d1-typed-query-0.2.0.tgz
 ```
 
 The package ships TypeScript source, so the builder and the freezer run under a
