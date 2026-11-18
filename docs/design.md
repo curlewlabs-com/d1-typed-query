@@ -38,6 +38,13 @@ stays an identifier. SQLite's
 [SELECT rules](https://www.sqlite.org/lang_select.html) distinguish direct
 output-name ordering from ordinary ordering expressions.
 
+An ordering expression keeps the meaning it was built with. A term that renders
+as a bare column name, as a single-source read's columns do, is refused when an
+output alias of that name projects something else, since SQLite would order by
+the alias. A term that renders as an integer constant is refused, since SQLite
+would read it as an output position. A qualified column is never read as an
+alias, so a joined or aliased read orders by its input column as written.
+
 ### Identity
 
 - **Reused parameter.** Exact authored name, domain, nullability and refinement.
@@ -181,9 +188,9 @@ form cannot discard clauses. Definitions cannot capture an outer row.
 Rendering walks lexical CTE scope alongside SQL and bind emission. A reference
 must resolve to the exact definition, through an alias or a nested query too. An
 absent or forward definition is refused before SQL can execute. Duplicate names
-and nested shadowing are refused case-insensitively, and a CTE cannot shadow a
-table. These restrictions keep SQL's textual resolution consistent with the
-tree's nominal column identity.
+and nested shadowing are refused case-insensitively, and a CTE and a table never
+share a name, whichever is defined first. These restrictions keep SQL's textual
+resolution consistent with the tree's nominal column identity.
 
 ## Derived read sources
 
