@@ -63,11 +63,22 @@ export function jsonArrayOf<
     throw new RangeError(
       `jsonArrayOf: ${values.length} elements exceed the source's declared maximum of ${maxLength}`,
     );
-  return JSON.stringify(
-    values.map((value) =>
+  // JSON.stringify writes NaN, an infinity and a missing position as null, and
+  // the source would yield a NULL its non-null element domain cannot hold.
+  const elements: (number | string)[] = [];
+  for (let index = 0; index < values.length; index++) {
+    if (!(index in values))
+      throw new RangeError(`jsonArrayOf: element ${index} is missing`);
+    const value = values[index] as T;
+    if (typeof value === "number" && !Number.isFinite(value))
+      throw new RangeError(
+        `jsonArrayOf: element ${index} is ${value}, which JSON cannot carry`,
+      );
+    elements.push(
       typeof value === "number" || typeof value === "string"
         ? value
         : hex(value),
-    ),
-  ) as JsonArrayOf<T, Max>;
+    );
+  }
+  return JSON.stringify(elements) as JsonArrayOf<T, Max>;
 }

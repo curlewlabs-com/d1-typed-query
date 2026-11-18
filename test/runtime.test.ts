@@ -1,7 +1,8 @@
 // The runtime entry: binding by name into positional parameters, the name
-// check that catches untyped input, the D1 lowering, the json_each bind mint,
-// and the property the package exists for - that a Worker importing
-// ./runtime bundles no builder module.
+// check that catches untyped input and the names it is built from, the D1
+// lowering, the json_each bind mint and the values it refuses, and the
+// property the package exists for - that a Worker importing ./runtime bundles
+// no builder module.
 
 import { describe, expect, it } from "bun:test";
 import { build } from "esbuild";
@@ -44,6 +45,22 @@ describe("precomputed", () => {
     expect(() => untyped.bound({ shelf: 4, title: "x", tilte: "x" })).toThrow(
       /param "tilte" has no matching/,
     );
+  });
+
+  // The name check's set is built on the first bind and binding reads the
+  // names on every bind, so both must read one list the caller cannot change.
+  it("keeps the names it was given when the caller's array changes", () => {
+    const names = ["shelf"];
+    const byShelf = precomputed<{ shelf: number }, unknown>(
+      "SELECT id FROM books WHERE shelf = ?",
+      names,
+    );
+    names[0] = "title";
+    expect(byShelf.bound({ shelf: 4 }).params).toEqual([4]);
+    names.push("title");
+    expect(byShelf.bound({ shelf: 5 }).params).toEqual([5]);
+    expect(byShelf.paramNames).toEqual(["shelf"]);
+    expect(Object.isFrozen(byShelf.paramNames)).toBe(true);
   });
 
   it("tells a query from a look-alike object", () => {
@@ -121,6 +138,21 @@ describe("jsonArrayOf", () => {
     expect<string>(jsonArrayOf([1, 2], 3)).toBe("[1,2]");
     expect<string>(jsonArrayOf(["a"], 3)).toBe('["a"]');
     expect<string>(jsonArrayOf([new Uint8Array([0, 255])], 3)).toBe('["00ff"]');
+  });
+
+  // JSON.stringify would write each of these as null, and the source would
+  // yield a NULL element that its non-null element domain says cannot occur.
+  it("refuses NaN, an infinity and a missing element", () => {
+    expect(() => jsonArrayOf([1, Number.NaN], 3)).toThrow(/element 1 is NaN/);
+    expect(() => jsonArrayOf([Number.POSITIVE_INFINITY], 3)).toThrow(
+      /element 0 is Infinity/,
+    );
+    expect(() => jsonArrayOf([Number.NEGATIVE_INFINITY], 3)).toThrow(
+      /-Infinity/,
+    );
+    const holed: number[] = [1];
+    holed[2] = 3;
+    expect(() => jsonArrayOf(holed, 3)).toThrow(/element 1 is missing/);
   });
 
   // The declared maximum is what bounds the rows a json_each source walks, so a
