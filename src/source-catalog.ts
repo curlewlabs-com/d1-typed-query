@@ -135,6 +135,7 @@ export class SchemaSourceCatalog {
     domains: D,
   ): DefinedTable<D> {
     assertSourceName(table, "table");
+    for (const name of Object.keys(domains)) assertSqlName(name, "column");
     if (this.cteNames.has(table.toLowerCase()))
       throw new Error("query-builder: table cannot take a CTE's name");
     this.physicalTableNames.add(table.toLowerCase());
