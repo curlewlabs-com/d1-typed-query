@@ -43,8 +43,8 @@ import { Authors, Books, LIBRARY_DDL, Library, Loans } from "./library-schema";
 let db: Database;
 beforeEach(() => {
   db = new Database(":memory:");
-  db.exec(LIBRARY_DDL);
-  db.exec(`
+  db.run(LIBRARY_DDL);
+  db.run(`
     INSERT INTO authors VALUES (1, 'Ada', NULL), (2, 'Basil', 100);
     INSERT INTO books VALUES (x'01', 1, 'Engines', '111', 'history', 120, NULL, 1000),
                              (x'02', 1, 'Looms', '222', 'history', 80, NULL, 2000),
@@ -311,13 +311,13 @@ describe("scope", () => {
 
 describe("subquery row guarantees", () => {
   it("keeps an aggregate subquery's domain, nullable where empty input is", () => {
-    const latest = aggregateSubquery(
+    const _latest = aggregateSubquery(
       select({
         from: Loans,
         columns: [project(aggregateMax(columnValue(Loans.due_at)))],
       }),
     );
-    const due: ExpressionValue<typeof latest> = null;
+    const due: ExpressionValue<typeof _latest> = null;
     expect(due).toBeNull();
     // Construction, not the type, refuses a plain column here.
     expect(() =>
@@ -328,7 +328,7 @@ describe("subquery row guarantees", () => {
   });
 
   it("keeps a required lookup non-null and refuses a nullable projection", () => {
-    const name = requiredScalarSubquery(
+    const _name = requiredScalarSubquery(
       select({
         from: Authors,
         columns: [project(Authors.name)],
@@ -340,7 +340,7 @@ describe("subquery row guarantees", () => {
         outer: [Books],
       }),
     );
-    const text: ExpressionValue<typeof name> = "Ada";
+    const text: ExpressionValue<typeof _name> = "Ada";
     expect(text).toBe("Ada");
     expect(() =>
       requiredScalarSubquery(

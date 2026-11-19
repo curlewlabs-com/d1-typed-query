@@ -15,7 +15,7 @@ import {
 } from "./statements";
 
 const SUBQUERY: unique symbol = Symbol("SubqueryExpression");
-const subqueryNodes = new WeakSet<object>();
+const subqueryNodes = new WeakSet();
 export interface SubqueryIdentity {
   readonly [SUBQUERY]: true;
 }
@@ -82,7 +82,9 @@ export function aggregateSubquery<S extends SingleSimpleSelect>(
   query: S,
 ): Expression<SelectedValue<S>, RequirementsOf<S>> {
   assertSingleSelect(query);
-  if (query.tree.kind !== "select")
+  // Read as unknown: an untyped caller can pass a compound SELECT here.
+  const kind: unknown = query.tree.kind;
+  if (kind !== "select")
     throw new Error("query-builder: aggregate scalar requires a simple SELECT");
   const value = query.tree.columns[0].value;
   if (!value.hasAggregate || query.tree.limit !== null)

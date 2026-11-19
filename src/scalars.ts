@@ -13,7 +13,7 @@ import type { JsonArrayOf, NumericLiteral } from "./json-array";
 
 const DOMAIN: unique symbol = Symbol("SqlDomain");
 const VALUE: unique symbol = Symbol("SqlDomainValue");
-const domains = new WeakSet<object>();
+const domains = new WeakSet();
 
 type Relation<K extends string> = DomainRelations extends {
   readonly [P in K]: infer V;

@@ -150,11 +150,11 @@ describe("closed arithmetic", () => {
   });
 
   it("applies a declared operation only to its own domains", () => {
-    const total = addPages(
+    const _total = addPages(
       columnValue(Books.pages),
       scalarParam(Library.pages, "extra"),
     );
-    const pages: ExpressionValue<typeof total> = 1 as Pages;
+    const pages: ExpressionValue<typeof _total> = 1 as Pages;
     expect(pages).toBe(1 as Pages);
     expect(() =>
       // @ts-expect-error a count is not a page count
@@ -188,23 +188,23 @@ describe("stored UUIDs and nullability", () => {
     const loan = leftJoin(Loans, "l", (l) =>
       compare(columnValue(l.book_id), "=", columnValue(Books.id)),
     );
-    const query = buildQuery(
+    const _query = buildQuery(
       select({
         from: Books,
         joins: [loan],
         columns: [project(Books.title), project(loan.source.due_at)],
       }),
     );
-    const unmatched: QueryRow<ReturnType<typeof query.bound>> = {
+    const unmatched: QueryRow<ReturnType<typeof _query.bound>> = {
       title: "Looms",
       due_at: null,
     };
     expect(unmatched.due_at).toBeNull();
-    const plain = buildQuery(
+    const _plain = buildQuery(
       select({ from: Loans, columns: [project(Loans.due_at)] }),
     );
     // @ts-expect-error a required column read without a join is never NULL
-    const never: QueryRow<ReturnType<typeof plain.bound>> = { due_at: null };
+    const never: QueryRow<ReturnType<typeof _plain.bound>> = { due_at: null };
     void never;
   });
 });
@@ -305,7 +305,7 @@ describe("source names and literal text", () => {
   // BMP is still written, and reaches SQLite as the same text.
   it("carries quotes and characters outside the BMP exactly", () => {
     const db = new Database(":memory:");
-    db.exec(LIBRARY_DDL);
+    db.run(LIBRARY_DDL);
     const text = "it's \u{1F4DA}";
     const query = buildQuery(
       select({

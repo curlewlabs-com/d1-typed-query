@@ -30,6 +30,7 @@ export type { Brand, EpochSeconds, Seconds } from "./brand";
  */
 // Empty here: the augmentation target must be an interface an application can
 // merge into.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- an application merges its relations into it, which only an interface allows
 export interface DomainRelations {}
 
 export {

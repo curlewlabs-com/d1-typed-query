@@ -29,7 +29,7 @@ import {
 } from "./params";
 
 const ARITHMETIC: unique symbol = Symbol("ArithmeticExpression");
-const arithmeticNodes = new WeakSet<object>();
+const arithmeticNodes = new WeakSet();
 export interface ArithmeticIdentity {
   readonly [ARITHMETIC]: true;
 }

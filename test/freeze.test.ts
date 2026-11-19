@@ -91,12 +91,12 @@ export const CATALOG_QUERIES = {
       CATALOG_QUERIES.BOOK_BY_ISBN.sql,
       CATALOG_QUERIES.BOOK_BY_ISBN.paramNames,
     );
-    const bound = frozen.bound({ isbn: "111" as Isbn });
+    const _bound = frozen.bound({ isbn: "111" as Isbn });
     // @ts-expect-error the bind keeps its Isbn type
     frozen.bound({ isbn: "111" });
-    const row: QueryRow<typeof bound> = { title: "Engines" };
+    const row: QueryRow<typeof _bound> = { title: "Engines" };
     // @ts-expect-error the row keeps its projection: there is no pages column
-    const wrong: QueryRow<typeof bound> = { title: "Engines", pages: 1 };
+    const wrong: QueryRow<typeof _bound> = { title: "Engines", pages: 1 };
     // @ts-expect-error the authored query's build-time fields do not survive
     expect(frozen.jsonEachSources).toBeUndefined();
     expect([row, wrong]).toHaveLength(2);

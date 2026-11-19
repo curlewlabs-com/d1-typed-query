@@ -53,7 +53,7 @@ import { SelectBody, assertLimit } from "./select-body";
 
 const STATEMENT: unique symbol = Symbol("SqlStatement");
 const ROW: unique symbol = Symbol("StatementRow");
-const statements = new WeakSet<object>();
+const statements = new WeakSet();
 
 type OptionalRequirements<I, K extends PropertyKey> = K extends keyof I
   ? RequirementsOf<I[K]>
@@ -300,7 +300,9 @@ export function assertStatement(value: AnyStatement): void {
  */
 export function assertSelect(value: AnySelect): void {
   assertStatement(value);
-  if (value.tree.kind !== "select" && value.tree.kind !== "compound-select")
+  // Read as unknown: an untyped caller can pass any statement here.
+  const kind: unknown = value.tree.kind;
+  if (kind !== "select" && kind !== "compound-select")
     throw new Error("query-builder: subquery must be a SELECT");
 }
 
@@ -310,7 +312,9 @@ export function assertSelect(value: AnySelect): void {
  */
 export function assertSingleSelect(value: SingleSelect): void {
   assertSelect(value);
-  if (value.outputs.length !== 1)
+  // Read as a number: an untyped caller can pass a SELECT of any arity here.
+  const arity: number = value.outputs.length;
+  if (arity !== 1)
     throw new Error("query-builder: scalar subquery needs a single projection");
 }
 
@@ -436,8 +440,10 @@ function compoundSelect<
     throw new Error(`query-builder: ${operator} exceeds D1's SELECT arm limit`);
   for (const arm of arms) {
     assertSelect(arm);
+    // Read as unknown: an untyped caller can pass a compound SELECT as an arm.
+    const armKind: unknown = arm.tree.kind;
     if (
-      arm.tree.kind !== "select" ||
+      armKind !== "select" ||
       arm.ctes.length !== 0 ||
       arm.tree.orderBy.length !== 0 ||
       arm.tree.limit !== null
@@ -639,7 +645,10 @@ export function insert<const I extends InsertInput>(
   const where = ReadScope.where(input.where, visible);
   const returning = checkedReturning(input, source);
   const onConflict = input.onConflict ?? null;
-  if (input.orIgnore !== undefined && input.orIgnore !== true)
+  // Read as unknown: an untyped caller reaches this check, and the field's type
+  // does not constrain what it passes.
+  const orIgnore: unknown = input.orIgnore;
+  if (orIgnore !== undefined && orIgnore !== true)
     throw new Error("query-builder: invalid INSERT OR IGNORE policy");
   if (onConflict !== null) {
     assertConflict(onConflict, source);

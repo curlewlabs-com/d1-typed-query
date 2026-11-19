@@ -22,7 +22,7 @@ import {
 } from "./params";
 
 const CONFLICT: unique symbol = Symbol("ConflictClause");
-const clauses = new WeakSet<object>();
+const clauses = new WeakSet();
 
 interface ConflictTargetInput {
   readonly target: readonly [ColumnReference, ...ColumnReference[]];
