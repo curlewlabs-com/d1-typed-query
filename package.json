@@ -1,6 +1,6 @@
 {
   "name": "@curlewlabs-com/d1-typed-query",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Type-checked SQL for Cloudflare D1, written with a typed builder and frozen to plain SQL at build time so the builder never ships in the Worker.",
   "license": "MIT OR Apache-2.0",
   "author": "Curlew Labs",
