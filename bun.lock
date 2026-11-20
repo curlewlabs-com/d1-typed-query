@@ -5,7 +5,7 @@
     "": {
       "name": "@curlewlabs-com/d1-typed-query",
       "devDependencies": {
-        "@cloudflare/workers-types": "5.20261029.1",
+        "@cloudflare/workers-types": "5.20261030.1",
         "@types/bun": "1.4.4",
         "esbuild": "0.28.2",
         "typescript": "7.0.2",
@@ -13,7 +13,7 @@
     },
   },
   "packages": {
-    "@cloudflare/workers-types": ["@cloudflare/workers-types@5.20261029.1", "", {}, "sha512-HwLwogkO/PnT4oXC8Y6wMQpgYbT3TEbWHytHV56F2tz9eLJBcgf4/VMjk5FYriAYHX6JOutS+tU6miuopKfCKw=="],
+    "@cloudflare/workers-types": ["@cloudflare/workers-types@5.20261030.1", "", {}, "sha512-oKHewMzKBtXq3dWiYL9GpHFnBfg8juBOir9PPREMPT8G2MHotAxIBIQ2w1rpO1xCN9etRlAxJaeoQbMGSlXqlQ=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.28.2", "", { "os": "aix", "cpu": "ppc64" }, "sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ=="],
 
