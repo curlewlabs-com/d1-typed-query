@@ -1,8 +1,8 @@
 // The runtime entry: binding by name into positional parameters, the name
 // check that catches untyped input and the names it is built from, the D1
 // lowering, the json_each bind mint and the values it refuses, and the
-// property the package exists for - that a Worker importing ./runtime bundles
-// no builder module.
+// property the package exists for - that a Worker importing ./runtime, or a
+// frozen registry importing ./contract, bundles no builder module.
 
 import { describe, expect, it } from "bun:test";
 import { build } from "esbuild";
@@ -185,5 +185,23 @@ describe("runtime bundle", () => {
       "json-array.ts",
       "runtime.ts",
     ]);
+  });
+
+  // Every frozen module imports ./contract, so whatever it reaches loads
+  // wherever a frozen registry does, a program without D1 included.
+  it("bundles from ./contract with nothing but the contract", async () => {
+    const result = await build({
+      entryPoints: [`${PACKAGE_ROOT}/src/contract.ts`],
+      bundle: true,
+      write: false,
+      metafile: true,
+      format: "esm",
+      platform: "neutral",
+      minify: true,
+    });
+    const inputs = Object.keys(result.metafile.inputs).map((path) =>
+      path.replace(/^(.*\/)?src\//, ""),
+    );
+    expect(inputs).toEqual(["contract.ts"]);
   });
 });

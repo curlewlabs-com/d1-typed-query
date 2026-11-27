@@ -39,8 +39,8 @@ describe("freezeRegistry", () => {
       }),
     )
       .toBe(`import type { CATALOG_QUERIES as Authored } from "../queries/catalog";
-import { precomputed } from "@curlewlabs-com/d1-typed-query/runtime";
-import type { GeneratedQuery } from "@curlewlabs-com/d1-typed-query/runtime";
+import { precomputed } from "@curlewlabs-com/d1-typed-query/contract";
+import type { GeneratedQuery } from "@curlewlabs-com/d1-typed-query/contract";
 
 export const CATALOG_QUERIES = {
   BOOK_BY_ISBN: precomputed(

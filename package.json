@@ -14,6 +14,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./runtime": "./src/runtime.ts",
+    "./contract": "./src/contract.ts",
     "./freeze": "./src/freeze.ts",
     "./package.json": "./package.json"
   },
@@ -25,7 +26,7 @@
     "LICENSE-APACHE"
   ],
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json && tsc -p test/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.contract.json && tsc -p test/tsconfig.json",
     "test": "bun test --no-install --timeout 60000 test"
   },
   "devDependencies": {
