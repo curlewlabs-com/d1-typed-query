@@ -31,7 +31,7 @@ jobs:
       - uses: curlewlabs-com/ci-baseline/typed@c737cbfb15dc18daffdcc34a2f01e114a389643f # v0.3.8
       - run: bun run test
       # The release asset is this tarball, so its file list is checked on every
-      # change: the three entry points, the design doc and the licences, and no
+      # change: the four entry points, the design doc and the licences, and no
       # test file.
       - name: Pack the release tarball
         run: bun pm pack --destination "$RUNNER_TEMP"
@@ -41,6 +41,7 @@ jobs:
           cat "$RUNNER_TEMP/packed.txt"
           grep -qx 'package/src/index.ts' "$RUNNER_TEMP/packed.txt"
           grep -qx 'package/src/runtime.ts' "$RUNNER_TEMP/packed.txt"
+          grep -qx 'package/src/contract.ts' "$RUNNER_TEMP/packed.txt"
           grep -qx 'package/src/freeze.ts' "$RUNNER_TEMP/packed.txt"
           grep -qx 'package/docs/design.md' "$RUNNER_TEMP/packed.txt"
           grep -qx 'package/LICENSE-MIT' "$RUNNER_TEMP/packed.txt"

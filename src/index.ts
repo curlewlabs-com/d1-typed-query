@@ -1,7 +1,8 @@
 // The builder entry point: schema and domain declarations, the statement and
 // expression constructors, and buildQuery, which closes authoring by rendering
 // a checked statement to SQL and its ordered bind names. Nothing here belongs
-// in a deployed bundle; the runtime entry point is ./runtime.
+// in a deployed bundle; the runtime entry points are ./runtime, and ./contract
+// for a program that has no D1 types.
 
 import type { AuthoredQuery } from "./format";
 import type { BindParams, Requirements } from "./params";
@@ -127,7 +128,8 @@ export type {
   SameType,
 } from "./params";
 export type { JsonEachOccurrence } from "./renderer";
-export type { AuthoredSql, AuthoredQuery, GeneratedQuery } from "./format";
+export type { AuthoredSql, AuthoredQuery } from "./format";
+export type { GeneratedQuery } from "./contract";
 
 /**
  * Closes query authoring by rendering SQL and positional bind names together.

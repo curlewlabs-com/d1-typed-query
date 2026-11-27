@@ -15,7 +15,10 @@ export interface FreezeInput {
   readonly registry: unknown;
 }
 
-const RUNTIME_MODULE = "@curlewlabs-com/d1-typed-query/runtime";
+// The contract entry, not ./runtime: the frozen module needs only precomputed
+// and GeneratedQuery, and ./runtime names D1's ambient types, which a program
+// that runs its statements through its own handle does not declare.
+const CONTRACT_MODULE = "@curlewlabs-com/d1-typed-query/contract";
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 // The frozen module declares these names itself, and the rest cannot name a
 // `const`; an export name that is one of them would not load.
@@ -86,8 +89,8 @@ export function freezeRegistry(input: FreezeInput): string {
     )
     .join("\n\n");
   return `import type { ${exportName} as Authored } from ${JSON.stringify(authoredModule)};
-import { precomputed } from "${RUNTIME_MODULE}";
-import type { GeneratedQuery } from "${RUNTIME_MODULE}";
+import { precomputed } from "${CONTRACT_MODULE}";
+import type { GeneratedQuery } from "${CONTRACT_MODULE}";
 
 export const ${exportName} = {
 ${entries}

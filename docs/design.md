@@ -363,7 +363,10 @@ traversal. Repeated parameter nodes emit repeated placeholders and names, which
 `precomputed` and `.bound()` consume; `precomputed` keeps a frozen copy of the
 names, so the bind-name check and the binding read one list. The freezer copies
 that pair into a runtime module without parsing it, and the module refers to the
-authored query's type through an import that is erased.
+authored query's type through an import that is erased. Its one runtime import
+is the contract entry (`contract.ts`), which names no D1 type: lowering onto D1
+belongs to the runtime entry, so a program that binds through a handle of its
+own can load a frozen registry without D1's declarations.
 
 The name check in `.bound()` is a runtime failure detector for untyped input.
 Its name set is allocated on a query's first bind, so loading a registry does

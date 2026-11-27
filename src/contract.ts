@@ -1,7 +1,9 @@
 // The execution contract a frozen registry is built from: a query declared
 // once with a typed parameter shape and bound by name into a backend-neutral
-// statement. It names no D1 type, so a program without Workers types (a build
-// script, the builder) can load it.
+// statement. It is also the ./contract entry point, which a frozen registry
+// imports. It names no D1 type and imports nothing, so a program without
+// Workers types (a build script, the builder, a package that runs statements
+// through a handle of its own) can load and typecheck it.
 
 // Makes a BoundQuery distinguishable from a D1PreparedStatement at run time
 // (isBoundQuery) and keeps it opaque: callers only ever hand it to a lowering.
@@ -55,6 +57,11 @@ function assertParamNameAgreement(
     }
   }
 }
+
+// The type a frozen registry entry carries: its authored query's parameter and
+// row types, without the authored query's build-time fields.
+export type GeneratedQuery<Q> =
+  Q extends Query<infer P, infer R> ? Query<P, R> : never;
 
 // A frozen registry passes positional SQL and ordered parameter names
 // together. Binding walks that order, including repeated names.

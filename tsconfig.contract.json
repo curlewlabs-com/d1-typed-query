@@ -1,0 +1,13 @@
+{
+  // The contract entry's own program: the sources' options, with no ambient
+  // types at all. A package that runs frozen queries through its own statement
+  // handle has no D1 types, so this entry must typecheck without them; the
+  // sources' program declares Workers types and could not catch a D1 name
+  // reaching it.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": []
+  },
+  "files": ["src/contract.ts"],
+  "include": []
+}
