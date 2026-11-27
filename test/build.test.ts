@@ -23,6 +23,7 @@ import {
   insert,
   isNull,
   jsonEach,
+  nullableParam,
   innerJoin,
   leftJoin,
   crossJoin,
@@ -41,6 +42,7 @@ import {
   update,
   withCtes,
   elapsedSinceUnixOrigin,
+  type EpochSeconds,
   type Statement,
   type Requirements,
 } from "@curlewlabs-com/d1-typed-query";
@@ -134,6 +136,36 @@ describe("rendering", () => {
       excluded: 9 as AuthorId,
     });
     expect(bound.params).toEqual([1, 1, 9]);
+  });
+
+  // A compare-and-write guard rereads the value it decided on. When that value
+  // was NULL, `= ?` bound with null matches no row, so only IS can hold the
+  // guard to the row as read.
+  it("matches a NULL column with IS bound to null, where = matches none", () => {
+    const query = (operator: "=" | "IS") =>
+      buildQuery(
+        select({
+          from: Loans,
+          columns: [project(Loans.member_id)],
+          where: compare(
+            columnValue(Loans.returned_at),
+            operator,
+            nullableParam(Loans.returned_at, "returned"),
+          ),
+        }),
+      );
+    expect(query("IS").sql).toBe(
+      "SELECT member_id FROM loans WHERE returned_at IS ?",
+    );
+    const run = (operator: "=" | "IS", returned: EpochSeconds | null) => {
+      const bound = query(operator).bound({ returned });
+      return db.query(bound.sql).all(...(bound.params as never[]));
+    };
+    expect(run("IS", null)).toEqual([{ member_id: 7 }]);
+    expect(run("IS", 4150 as EpochSeconds)).toEqual([{ member_id: 8 }]);
+    expect(run("=", null)).toEqual([]);
+    // @ts-expect-error the bind keeps its column's domain, null aside
+    query("IS").bound({ returned: "4150" });
   });
 
   it("widens a LEFT JOIN's columns to nullable and keeps unmatched rows", () => {

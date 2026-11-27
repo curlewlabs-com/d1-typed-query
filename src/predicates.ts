@@ -34,7 +34,24 @@ import type { OutputValue } from "./projections";
 const PREDICATE: unique symbol = Symbol("SqlPredicate");
 const predicateNodes = new WeakSet();
 
-export type Comparison = "=" | "!=" | "<>" | "<" | "<=" | ">" | ">=" | "IS NOT";
+// One list for the type and for compare()'s runtime check, so an operator
+// cannot be admitted by one and refused by the other. IS and IS NOT compare as
+// = and != do, except that NULL equals NULL, so a guard can match a row whose
+// column it read as NULL. A bind they compare is nullable only when it is
+// built so (nullableParam, scalarParam over a nullable domain): the operator
+// does not widen it.
+const COMPARISONS = [
+  "=",
+  "!=",
+  "<>",
+  "<",
+  "<=",
+  ">",
+  ">=",
+  "IS",
+  "IS NOT",
+] as const;
+export type Comparison = (typeof COMPARISONS)[number];
 type PredicateTree =
   | {
       readonly kind: "exists";
@@ -147,7 +164,7 @@ export function compare<L extends AnyExpression, R extends AnyExpression>(
 ): Predicate<CollectRequirements<readonly [L, R]>> {
   assertExpression(left);
   assertExpression(right);
-  if (!["=", "!=", "<>", "<", "<=", ">", ">=", "IS NOT"].includes(operator))
+  if (!(COMPARISONS as readonly string[]).includes(operator))
     throw new Error("query-builder: invalid comparison operator");
   if (
     !acceptsDomain(
