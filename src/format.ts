@@ -1,5 +1,7 @@
-// The authored and generated query types that carry SQL, bind order, and row
-// shape across the build boundary.
+// The authored query types: what buildQuery returns, carrying SQL, bind order
+// and row shape across the build boundary. The type a generated registry entry
+// carries is the contract's (GeneratedQuery, contract.ts), since a frozen
+// module imports only the contract.
 
 // SQL and bind order cross the build boundary together. Generated registries
 // retain the execution contract - bind types and the projection's row - through
@@ -18,7 +20,3 @@ export interface AuthoredSql {
 }
 export interface AuthoredQuery<P extends Record<string, unknown>, R>
   extends Query<P, R>, AuthoredSql {}
-// The type a frozen registry entry carries: its authored query's parameter and
-// row types, without the authored query's build-time fields.
-export type GeneratedQuery<Q> =
-  Q extends Query<infer P, infer R> ? Query<P, R> : never;

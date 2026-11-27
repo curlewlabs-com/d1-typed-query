@@ -1,6 +1,7 @@
 // The runtime entry point: the execution contract a frozen registry is built
-// from (contract.ts), and its lowering onto D1. This is the part of the package
-// a deployed Worker loads, so it imports no builder module, only types.
+// from (contract.ts, also an entry point of its own), and its lowering onto
+// D1. This is the part of the package a deployed Worker loads, so it imports
+// no builder module.
 //
 // A query is declared once with a typed parameter shape, bound by name, and
 // lowered to a D1 statement whose rows have the type the query's projection
@@ -11,7 +12,6 @@
 // @cloudflare/workers-types declares, which every program that runs D1 queries
 // already has.
 
-export type { GeneratedQuery } from "./format";
 export type { Brand, EpochSeconds, Seconds } from "./brand";
 export {
   jsonArrayOf,
@@ -23,6 +23,7 @@ export {
   isBoundQuery,
   isQuery,
   type BoundQuery,
+  type GeneratedQuery,
   type Query,
 } from "./contract";
 import type { BoundQuery, Query } from "./contract";

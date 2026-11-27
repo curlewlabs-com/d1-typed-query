@@ -20,10 +20,14 @@ A TypeScript package in three parts:
   `precomputed(sql, paramNames)` entries. The module imports its authored
   registry for types only, so every bind and row type survives and the builder
   is not loaded.
-- **A runtime** (`@curlewlabs-com/d1-typed-query/runtime`). This is what the
-  frozen module and your Worker load: `precomputed`, `Query.bound()`, which maps
-  named values to positional parameters, and `lowerToD1`/`batchD1`, which
-  prepare and bind the statement and return the query's own row type.
+- **A runtime** (`@curlewlabs-com/d1-typed-query/runtime`). This is what your
+  Worker loads: `precomputed`, `Query.bound()`, which maps named values to
+  positional parameters, and `lowerToD1`/`batchD1`, which prepare and bind the
+  statement and return the query's own row type. The frozen module imports only
+  its contract part, `@curlewlabs-com/d1-typed-query/contract` (`precomputed`,
+  `Query`, `BoundQuery`, `GeneratedQuery`), which names no D1 type, so a program
+  that runs statements through a database handle of its own can load frozen
+  queries without the Workers types.
 
 ## Why it exists
 
@@ -180,8 +184,8 @@ The output holds the SQL text and bind names and nothing else:
 
 ```ts
 import type { LOAN_QUERIES as Authored } from "../queries/loans";
-import { precomputed } from "@curlewlabs-com/d1-typed-query/runtime";
-import type { GeneratedQuery } from "@curlewlabs-com/d1-typed-query/runtime";
+import { precomputed } from "@curlewlabs-com/d1-typed-query/contract";
+import type { GeneratedQuery } from "@curlewlabs-com/d1-typed-query/contract";
 
 export const LOAN_QUERIES = {
   LOANS_OF_MEMBER: precomputed(
@@ -211,6 +215,19 @@ statement. A program that runs D1 queries has the D1 types from
 `@cloudflare/workers-types`, and the runtime entry uses those ambient
 declarations.
 
+A program whose statements run through another handle (its own interface over
+D1, or SQLite in its tests) uses the contract entry instead. A bound query is
+its `sql` and its positional `params`, so the program prepares and binds it on
+that handle itself:
+
+```ts
+import type { BoundQuery } from "@curlewlabs-com/d1-typed-query/contract";
+
+function prepareBound(db: MyHandle, query: BoundQuery) {
+  return db.prepare(query.sql).bind(...query.params);
+}
+```
+
 ## What ships at runtime
 
 The runtime entry bundles to about 1.5 KB minified (`contract.ts`, `runtime.ts`
@@ -219,7 +236,8 @@ string, a frozen copy of its bind-name list made when the module loads, and the
 cost of `bound()`: one array map, and a check of the given keys against the
 query's bind names, held in a `Set` built the first time that query binds. The
 check catches a missing or misspelled key in untyped input. No builder module,
-schema or domain object is loaded.
+schema or domain object is loaded. The contract entry is `contract.ts` alone
+(also held by a test), and a frozen module's runtime import is that file.
 
 ## The inputs, and why each exists
 

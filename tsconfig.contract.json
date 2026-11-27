@@ -1,0 +1,25 @@
+{
+  // The contract entry's own program, with no ambient types at all. A package
+  // that runs frozen queries through its own statement handle has no D1 types,
+  // so this entry must typecheck without them; the sources' program
+  // (tsconfig.json) declares Workers types and could not catch a D1 name
+  // reaching it.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "types": [],
+    "rootDir": "src",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "files": ["src/contract.ts"]
+}
