@@ -32,6 +32,7 @@ import {
   existsValue,
   leftJoin,
   nullableParam,
+  param,
   project,
   randomBlob16,
   refinedParam,
@@ -248,6 +249,18 @@ describe("authority", () => {
       // @ts-expect-error division is not a declared operator
       operation("/", Library.pages, Library.pages, Library.pages),
     ).toThrow(/unsupported operator/);
+  });
+
+  // A comparison's operator is emitted as SQL text too.
+  it("refuses a comparison operator outside the closed set", () => {
+    expect(() =>
+      compare(
+        columnValue(Books.pages),
+        // @ts-expect-error LIKE is a predicate of its own, not a comparison
+        "LIKE",
+        param(Books.pages, "pages"),
+      ),
+    ).toThrow(/invalid comparison operator/);
   });
 
   // lower() and trim() keep their input's domain, so a refinement would keep
