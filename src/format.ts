@@ -1,7 +1,7 @@
 // The authored query types: what buildQuery returns, carrying SQL, bind order
 // and row shape across the build boundary. The type a generated registry entry
-// carries is the contract's (GeneratedQuery, contract.ts), since a frozen
-// module imports only the contract.
+// carries is the contract's (GeneratedQuery, contract.ts), since the contract
+// is the only module a frozen registry imports at run time.
 
 // SQL and bind order cross the build boundary together. Generated registries
 // retain the execution contract - bind types and the projection's row - through
