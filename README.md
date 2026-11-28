@@ -21,13 +21,15 @@ A TypeScript package in three parts:
   registry for types only, so every bind and row type survives and the builder
   is not loaded.
 - **A runtime** (`@curlewlabs-com/d1-typed-query/runtime`). This is what your
-  Worker loads: `precomputed`, `Query.bound()`, which maps named values to
-  positional parameters, and `lowerToD1`/`batchD1`, which prepare and bind the
-  statement and return the query's own row type. The frozen module imports only
-  its contract part, `@curlewlabs-com/d1-typed-query/contract` (`precomputed`,
-  `Query`, `BoundQuery`, `GeneratedQuery`), which names no D1 type, so a program
-  that runs statements through a database handle of its own can load frozen
-  queries without the Workers types.
+  Worker loads: `Query.bound()`, which maps named values to positional
+  parameters, and `lowerToD1`/`batchD1`, which prepare and bind the statement
+  and return the query's own row type. It does not export `precomputed`, so code
+  that imports only the runtime runs the queries it is handed and cannot build
+  one from SQL text. The frozen module imports only its contract part,
+  `@curlewlabs-com/d1-typed-query/contract` (`precomputed`, `Query`,
+  `BoundQuery`, `GeneratedQuery`), which names no D1 type, so a program that
+  runs statements through a database handle of its own can load frozen queries
+  without the Workers types.
 
 ## Why it exists
 

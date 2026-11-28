@@ -3,6 +3,11 @@
 // D1. This is the part of the package a deployed Worker loads, so it imports
 // no builder module.
 //
+// It re-exports the contract's types and guards but not precomputed, which
+// turns SQL text into a query: only a frozen registry needs that, and it
+// imports ./contract. Code that imports this entry alone runs the queries it
+// is handed and cannot write one from a string.
+//
 // A query is declared once with a typed parameter shape, bound by name, and
 // lowered to a D1 statement whose rows have the type the query's projection
 // derived. Passing a value whose type does not match a parameter's is a
@@ -19,7 +24,6 @@ export {
   type NumericLiteral,
 } from "./json-array";
 export {
-  precomputed,
   isBoundQuery,
   isQuery,
   type BoundQuery,
