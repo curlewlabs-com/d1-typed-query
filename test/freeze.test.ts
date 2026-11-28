@@ -15,8 +15,8 @@ import { freezeRegistry } from "@curlewlabs-com/d1-typed-query/freeze";
 import {
   precomputed,
   type GeneratedQuery,
-  type QueryRow,
-} from "@curlewlabs-com/d1-typed-query/runtime";
+} from "@curlewlabs-com/d1-typed-query/contract";
+import type { QueryRow } from "@curlewlabs-com/d1-typed-query/runtime";
 import { Books, type Isbn } from "./library-schema";
 
 const CATALOG_QUERIES = {

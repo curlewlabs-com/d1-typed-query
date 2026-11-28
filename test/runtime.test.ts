@@ -1,19 +1,21 @@
 // The runtime entry: binding by name into positional parameters, the name
 // check that catches untyped input and the names it is built from, the D1
-// lowering, the json_each bind mint and the values it refuses, and the
-// property the package exists for - that a Worker importing ./runtime, or a
-// frozen registry importing ./contract, bundles no builder module.
+// lowering, the json_each bind mint and the values it refuses, the SQL-text
+// constructor's absence from ./runtime, and the property the package exists
+// for - that a Worker importing ./runtime, or a frozen registry importing
+// ./contract, bundles no builder module.
 
 import { describe, expect, it } from "bun:test";
 import { build } from "esbuild";
 import { fileURLToPath } from "node:url";
+import { precomputed } from "@curlewlabs-com/d1-typed-query/contract";
+import * as runtime from "@curlewlabs-com/d1-typed-query/runtime";
 import {
   batchD1,
   isBoundQuery,
   isQuery,
   jsonArrayOf,
   lowerToD1,
-  precomputed,
   type D1Handle,
 } from "@curlewlabs-com/d1-typed-query/runtime";
 
@@ -68,6 +70,17 @@ describe("precomputed", () => {
       false,
     );
     expect(isBoundQuery({ sql: "SELECT 1", params: [] })).toBe(false);
+  });
+});
+
+describe("runtime entry", () => {
+  // Leaving the SQL-text constructor out of ./runtime is what keeps code that
+  // imports only this entry from writing a query out of a string, without a
+  // lint rule in every consumer. A re-export added back would reopen that.
+  it("does not export precomputed", () => {
+    // @ts-expect-error precomputed is the contract entry's alone
+    expect(runtime.precomputed).toBeUndefined();
+    expect("precomputed" in runtime).toBe(false);
   });
 });
 
